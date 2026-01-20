@@ -57,6 +57,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User confirmation required for potentially dangerous operations
 - Automatic mirrorlist backup before updates
 
+## [1.1.0] - 2026-01-20
+
+### Added
+- **Development Tools Menu** (Option 14) - Complete development environment setup
+  - Web Development:
+    - PHP Stack (PHP, PHP-FPM, Composer, common extensions)
+    - Laravel framework installer and project creator
+    - Node.js Stack (Node.js, npm, yarn, pnpm)
+  - Databases:
+    - PostgreSQL with automatic initialization
+    - MySQL/MariaDB with secure installation
+    - MongoDB (via AUR)
+    - Redis in-memory data store
+  - Programming Languages:
+    - Java (OpenJDK 11, 17, 21 with version switcher)
+    - Python Stack (pip, virtualenv, poetry)
+    - Go programming language
+    - Rust (rustc, cargo, rust-analyzer)
+  - DevOps Tools:
+    - Docker & Docker Compose with user group setup
+    - Git, GitHub CLI, Git LFS, Tig
+  - Tool verification feature to check installed development tools
+- Comprehensive development tools documentation (DEV_TOOLS_GUIDE.md)
+- Quick test script (TEST_DEV_TOOLS.sh) to check installed tools
+- Post-installation configuration guidance for each tool
+- Service management helpers (systemctl start/enable/status)
+
+### Enhanced
+- Main menu now includes Development Tools option
+- Better organization with categorized submenus
+- Automatic dependency checking (e.g., Composer for Laravel)
+- Interactive confirmations for optional components
+
 ## [Unreleased]
 
 ### Planned Features

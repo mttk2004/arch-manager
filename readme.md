@@ -34,6 +34,15 @@ Trình quản lý gói tập trung cho Arch Linux và các distro dựa trên Ar
 - 🌐 Quản lý mirror (reflector)
 - 🔧 Tự động cài đặt YAY nếu chưa có
 
+#### 🛠️ Môi trường phát triển (Development Tools) - MỚI!
+- **Web Development**: PHP Stack, Laravel, Node.js (npm, yarn, pnpm)
+- **Databases**: PostgreSQL, MySQL/MariaDB, MongoDB, Redis
+- **Programming Languages**: Java (JDK), Python (pip, poetry), Go, Rust
+- **DevOps Tools**: Docker & Docker Compose, Git & GitHub CLI
+- Cài đặt nhanh, tự động cấu hình, kiểm tra version
+
+> 📖 Xem chi tiết: [DEV_TOOLS_GUIDE.md](DEV_TOOLS_GUIDE.md)
+
 ## 📦 Yêu cầu
 
 ### Bắt buộc

@@ -68,6 +68,9 @@ show_main_menu() {
     echo -e "${GREEN}11.${RESET} Xem log gói"
     echo -e "${GREEN}12.${RESET} Mirror management"
     echo ""
+    echo -e "${YELLOW}═══ PHÁT TRIỂN (DEV TOOLS) ═══${RESET}"
+    echo -e "${GREEN}14.${RESET} Môi trường phát triển (PHP, Node.js, Java, Database...)"
+    echo ""
 
     if [[ -n "$aur_helper" ]]; then
         echo -e "${YELLOW}AUR Helper:${RESET} ${GREEN}$aur_helper${RESET} ✓"
@@ -81,7 +84,7 @@ show_main_menu() {
     echo ""
     echo -e "${RED}0.${RESET}  Thoát"
     echo ""
-    echo -en "${CYAN}Chọn chức năng [0-13]:${RESET} "
+    echo -en "${CYAN}Chọn chức năng [0-14]:${RESET} "
 }
 
 # Cài đặt gói
@@ -581,6 +584,627 @@ pause_prompt() {
     read
 }
 
+# =============================================================================
+# DEVELOPMENT TOOLS - Môi trường phát triển
+# =============================================================================
+
+# Menu Development Tools
+dev_tools_menu() {
+    while true; do
+        show_header
+        echo -e "${YELLOW}═══ MÔI TRƯỜNG PHÁT TRIỂN ═══${RESET}"
+        echo ""
+        echo -e "${CYAN}── Web Development ──${RESET}"
+        echo -e "${GREEN}1.${RESET}  PHP Stack (PHP, Composer, Extensions)"
+        echo -e "${GREEN}2.${RESET}  Laravel (Framework)"
+        echo -e "${GREEN}3.${RESET}  Node.js Stack (Node.js, npm, yarn, pnpm)"
+        echo ""
+        echo -e "${CYAN}── Databases ──${RESET}"
+        echo -e "${GREEN}4.${RESET}  PostgreSQL"
+        echo -e "${GREEN}5.${RESET}  MySQL/MariaDB"
+        echo -e "${GREEN}6.${RESET}  MongoDB"
+        echo -e "${GREEN}7.${RESET}  Redis"
+        echo ""
+        echo -e "${CYAN}── Programming Languages ──${RESET}"
+        echo -e "${GREEN}8.${RESET}  Java (JDK)"
+        echo -e "${GREEN}9.${RESET}  Python Stack (pip, virtualenv, poetry)"
+        echo -e "${GREEN}10.${RESET} Go"
+        echo -e "${GREEN}11.${RESET} Rust"
+        echo ""
+        echo -e "${CYAN}── Tools & Others ──${RESET}"
+        echo -e "${GREEN}12.${RESET} Docker & Docker Compose"
+        echo -e "${GREEN}13.${RESET} Git & Git Tools"
+        echo -e "${GREEN}14.${RESET} Kiểm tra các công cụ đã cài"
+        echo ""
+        echo -e "${RED}0.${RESET}  Quay lại menu chính"
+        echo ""
+        echo -en "${CYAN}Chọn [0-14]:${RESET} "
+        read choice
+
+        case $choice in
+            1) install_php_stack ;;
+            2) install_laravel ;;
+            3) install_nodejs_stack ;;
+            4) install_postgresql ;;
+            5) install_mysql ;;
+            6) install_mongodb ;;
+            7) install_redis ;;
+            8) install_java ;;
+            9) install_python_stack ;;
+            10) install_go ;;
+            11) install_rust ;;
+            12) install_docker ;;
+            13) install_git_tools ;;
+            14) check_dev_tools ;;
+            0) return ;;
+            *)
+                echo -e "${RED}Lựa chọn không hợp lệ!${RESET}"
+                sleep 1
+                ;;
+        esac
+    done
+}
+
+# PHP Stack
+install_php_stack() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT PHP STACK ═══${RESET}"
+    echo ""
+    echo -e "${CYAN}Sẽ cài đặt:${RESET}"
+    echo "  • PHP (latest)"
+    echo "  • PHP Extensions (common)"
+    echo "  • Composer (package manager)"
+    echo "  • PHP-FPM (FastCGI)"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt PHP và extensions...${RESET}"
+        sudo pacman -S --needed php php-fpm php-gd php-intl php-sqlite php-pgsql \
+            php-redis php-apcu php-imagick php-sodium
+
+        echo -e "${YELLOW}Đang cài đặt Composer...${RESET}"
+        sudo pacman -S --needed composer
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt PHP Stack!${RESET}"
+        echo ""
+        echo -e "${CYAN}Phiên bản đã cài:${RESET}"
+        php --version | head -1
+        composer --version
+        echo ""
+        echo -e "${YELLOW}Lưu ý:${RESET}"
+        echo "  • File cấu hình: /etc/php/php.ini"
+        echo "  • Enable extensions: uncomment trong php.ini"
+        echo "  • Start PHP-FPM: sudo systemctl start php-fpm"
+        echo "  • Enable PHP-FPM: sudo systemctl enable php-fpm"
+    fi
+
+    pause_prompt
+}
+
+# Laravel
+install_laravel() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT LARAVEL ═══${RESET}"
+    echo ""
+
+    # Check if composer is installed
+    if ! command -v composer &> /dev/null; then
+        echo -e "${RED}Composer chưa được cài đặt!${RESET}"
+        echo -en "${CYAN}Cài đặt PHP Stack trước? (y/N):${RESET} "
+        read install_php
+        if [[ "$install_php" == "y" || "$install_php" == "Y" ]]; then
+            install_php_stack
+            return
+        else
+            pause_prompt
+            return
+        fi
+    fi
+
+    echo -e "${CYAN}Chọn cách cài đặt Laravel:${RESET}"
+    echo -e "${GREEN}1.${RESET} Cài Laravel Installer (global)"
+    echo -e "${GREEN}2.${RESET} Tạo project Laravel mới"
+    echo -e "${RED}0.${RESET} Quay lại"
+    echo ""
+    echo -en "${CYAN}Chọn:${RESET} "
+    read choice
+
+    case $choice in
+        1)
+            echo -e "${YELLOW}Đang cài đặt Laravel Installer...${RESET}"
+            composer global require laravel/installer
+            echo ""
+            echo -e "${GREEN}✓ Đã cài Laravel Installer!${RESET}"
+            echo -e "${YELLOW}Thêm vào PATH (nếu chưa có):${RESET}"
+            echo "  export PATH=\"\$HOME/.config/composer/vendor/bin:\$PATH\""
+            echo -e "${CYAN}Tạo project mới:${RESET}"
+            echo "  laravel new project-name"
+            ;;
+        2)
+            echo -en "${CYAN}Nhập tên project:${RESET} "
+            read project_name
+            if [[ -n "$project_name" ]]; then
+                echo -e "${YELLOW}Đang tạo project Laravel '$project_name'...${RESET}"
+                composer create-project laravel/laravel "$project_name"
+                echo ""
+                echo -e "${GREEN}✓ Project đã được tạo!${RESET}"
+                echo -e "${CYAN}Chạy server:${RESET}"
+                echo "  cd $project_name"
+                echo "  php artisan serve"
+            fi
+            ;;
+    esac
+
+    pause_prompt
+}
+
+# Node.js Stack
+install_nodejs_stack() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT NODE.JS STACK ═══${RESET}"
+    echo ""
+    echo -e "${CYAN}Sẽ cài đặt:${RESET}"
+    echo "  • Node.js (LTS)"
+    echo "  • npm (package manager)"
+    echo "  • yarn (optional)"
+    echo "  • pnpm (optional)"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt Node.js và npm...${RESET}"
+        sudo pacman -S --needed nodejs npm
+
+        echo ""
+        echo -en "${CYAN}Cài đặt yarn? (y/N):${RESET} "
+        read install_yarn
+        if [[ "$install_yarn" == "y" || "$install_yarn" == "Y" ]]; then
+            sudo pacman -S --needed yarn
+        fi
+
+        echo ""
+        echo -en "${CYAN}Cài đặt pnpm? (y/N):${RESET} "
+        read install_pnpm
+        if [[ "$install_pnpm" == "y" || "$install_pnpm" == "Y" ]]; then
+            sudo npm install -g pnpm
+        fi
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt Node.js Stack!${RESET}"
+        echo ""
+        echo -e "${CYAN}Phiên bản đã cài:${RESET}"
+        node --version
+        npm --version
+        command -v yarn &> /dev/null && yarn --version
+        command -v pnpm &> /dev/null && pnpm --version
+        echo ""
+        echo -e "${YELLOW}Global packages phổ biến:${RESET}"
+        echo "  npm install -g typescript ts-node"
+        echo "  npm install -g @vue/cli"
+        echo "  npm install -g create-react-app"
+    fi
+
+    pause_prompt
+}
+
+# PostgreSQL
+install_postgresql() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT POSTGRESQL ═══${RESET}"
+    echo ""
+    echo -e "${CYAN}Sẽ cài đặt:${RESET}"
+    echo "  • PostgreSQL Server"
+    echo "  • PostgreSQL Client Tools"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt PostgreSQL...${RESET}"
+        sudo pacman -S --needed postgresql
+
+        echo ""
+        echo -e "${YELLOW}Khởi tạo database cluster...${RESET}"
+        sudo -iu postgres initdb -D /var/lib/postgres/data
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt PostgreSQL!${RESET}"
+        echo ""
+        echo -e "${YELLOW}Các lệnh quan trọng:${RESET}"
+        echo "  • Start:  sudo systemctl start postgresql"
+        echo "  • Enable: sudo systemctl enable postgresql"
+        echo "  • Status: sudo systemctl status postgresql"
+        echo ""
+        echo -e "${YELLOW}Tạo user và database:${RESET}"
+        echo "  sudo -u postgres createuser --interactive"
+        echo "  sudo -u postgres createdb mydb"
+        echo ""
+        echo -en "${CYAN}Start PostgreSQL ngay? (y/N):${RESET} "
+        read start_now
+        if [[ "$start_now" == "y" || "$start_now" == "Y" ]]; then
+            sudo systemctl start postgresql
+            sudo systemctl enable postgresql
+            echo -e "${GREEN}✓ PostgreSQL đã được khởi động!${RESET}"
+        fi
+    fi
+
+    pause_prompt
+}
+
+# MySQL/MariaDB
+install_mysql() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT MYSQL/MARIADB ═══${RESET}"
+    echo ""
+    echo -e "${GREEN}1.${RESET} MariaDB (khuyến nghị)"
+    echo -e "${GREEN}2.${RESET} MySQL"
+    echo -e "${RED}0.${RESET} Quay lại"
+    echo ""
+    echo -en "${CYAN}Chọn:${RESET} "
+    read choice
+
+    case $choice in
+        1)
+            echo -e "${YELLOW}Đang cài đặt MariaDB...${RESET}"
+            sudo pacman -S --needed mariadb
+
+            echo ""
+            echo -e "${YELLOW}Khởi tạo MariaDB...${RESET}"
+            sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
+
+            echo ""
+            echo -e "${GREEN}✓ Hoàn tất cài đặt MariaDB!${RESET}"
+            echo ""
+            echo -e "${YELLOW}Các lệnh quan trọng:${RESET}"
+            echo "  • Start:  sudo systemctl start mariadb"
+            echo "  • Enable: sudo systemctl enable mariadb"
+            echo "  • Secure:  sudo mysql_secure_installation"
+            echo ""
+            echo -en "${CYAN}Start MariaDB và chạy secure installation? (y/N):${RESET} "
+            read start_now
+            if [[ "$start_now" == "y" || "$start_now" == "Y" ]]; then
+                sudo systemctl start mariadb
+                sudo systemctl enable mariadb
+                sudo mysql_secure_installation
+            fi
+            ;;
+        2)
+            echo -e "${YELLOW}Đang cài đặt MySQL...${RESET}"
+            local aur_helper=$(detect_aur_helper)
+            if [[ -n "$aur_helper" ]]; then
+                $aur_helper -S mysql
+            else
+                echo -e "${RED}Cần AUR helper để cài MySQL!${RESET}"
+            fi
+            ;;
+    esac
+
+    pause_prompt
+}
+
+# MongoDB
+install_mongodb() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT MONGODB ═══${RESET}"
+    echo ""
+
+    local aur_helper=$(detect_aur_helper)
+    if [[ -z "$aur_helper" ]]; then
+        echo -e "${RED}Cần AUR helper để cài MongoDB!${RESET}"
+        echo -en "${CYAN}Cài đặt YAY trước? (y/N):${RESET} "
+        read install_yay_now
+        if [[ "$install_yay_now" == "y" || "$install_yay_now" == "Y" ]]; then
+            install_yay
+        fi
+        pause_prompt
+        return
+    fi
+
+    echo -e "${CYAN}Sẽ cài đặt MongoDB từ AUR${RESET}"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt MongoDB...${RESET}"
+        $aur_helper -S mongodb-bin mongodb-tools-bin
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt MongoDB!${RESET}"
+        echo ""
+        echo -e "${YELLOW}Các lệnh quan trọng:${RESET}"
+        echo "  • Start:  sudo systemctl start mongodb"
+        echo "  • Enable: sudo systemctl enable mongodb"
+        echo "  • Connect: mongosh"
+    fi
+
+    pause_prompt
+}
+
+# Redis
+install_redis() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT REDIS ═══${RESET}"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt Redis...${RESET}"
+        sudo pacman -S --needed redis
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt Redis!${RESET}"
+        echo ""
+        echo -e "${YELLOW}Các lệnh quan trọng:${RESET}"
+        echo "  • Start:  sudo systemctl start redis"
+        echo "  • Enable: sudo systemctl enable redis"
+        echo "  • CLI:    redis-cli"
+        echo ""
+        echo -en "${CYAN}Start Redis ngay? (y/N):${RESET} "
+        read start_now
+        if [[ "$start_now" == "y" || "$start_now" == "Y" ]]; then
+            sudo systemctl start redis
+            sudo systemctl enable redis
+            echo -e "${GREEN}✓ Redis đã được khởi động!${RESET}"
+        fi
+    fi
+
+    pause_prompt
+}
+
+# Java
+install_java() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT JAVA ═══${RESET}"
+    echo ""
+    echo -e "${GREEN}1.${RESET} OpenJDK 21 (LTS, khuyến nghị)"
+    echo -e "${GREEN}2.${RESET} OpenJDK 17 (LTS)"
+    echo -e "${GREEN}3.${RESET} OpenJDK 11 (LTS)"
+    echo -e "${GREEN}4.${RESET} Cài tất cả"
+    echo -e "${RED}0.${RESET} Quay lại"
+    echo ""
+    echo -en "${CYAN}Chọn:${RESET} "
+    read choice
+
+    case $choice in
+        1)
+            sudo pacman -S --needed jdk21-openjdk
+            ;;
+        2)
+            sudo pacman -S --needed jdk17-openjdk
+            ;;
+        3)
+            sudo pacman -S --needed jdk11-openjdk
+            ;;
+        4)
+            sudo pacman -S --needed jdk21-openjdk jdk17-openjdk jdk11-openjdk
+            ;;
+        0)
+            return
+            ;;
+    esac
+
+    if [[ "$choice" != "0" ]]; then
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt Java!${RESET}"
+        echo ""
+        echo -e "${CYAN}Phiên bản đã cài:${RESET}"
+        java --version
+        echo ""
+        echo -e "${YELLOW}Chuyển đổi phiên bản Java:${RESET}"
+        echo "  archlinux-java status"
+        echo "  sudo archlinux-java set java-21-openjdk"
+        pause_prompt
+    fi
+}
+
+# Python Stack
+install_python_stack() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT PYTHON STACK ═══${RESET}"
+    echo ""
+    echo -e "${CYAN}Sẽ cài đặt:${RESET}"
+    echo "  • Python 3 (latest)"
+    echo "  • pip (package manager)"
+    echo "  • virtualenv"
+    echo "  • poetry (optional)"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt Python stack...${RESET}"
+        sudo pacman -S --needed python python-pip python-virtualenv
+
+        echo ""
+        echo -en "${CYAN}Cài đặt Poetry? (y/N):${RESET} "
+        read install_poetry
+        if [[ "$install_poetry" == "y" || "$install_poetry" == "Y" ]]; then
+            sudo pacman -S --needed python-poetry
+        fi
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt Python Stack!${RESET}"
+        echo ""
+        echo -e "${CYAN}Phiên bản đã cài:${RESET}"
+        python --version
+        pip --version
+        echo ""
+        echo -e "${YELLOW}Tạo virtual environment:${RESET}"
+        echo "  python -m venv myenv"
+        echo "  source myenv/bin/activate"
+    fi
+
+    pause_prompt
+}
+
+# Go
+install_go() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT GO ═══${RESET}"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt Go...${RESET}"
+        sudo pacman -S --needed go
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt Go!${RESET}"
+        echo ""
+        go version
+        echo ""
+        echo -e "${YELLOW}Cấu hình GOPATH (thêm vào ~/.zshrc):${RESET}"
+        echo "  export GOPATH=\$HOME/go"
+        echo "  export PATH=\$PATH:\$GOPATH/bin"
+    fi
+
+    pause_prompt
+}
+
+# Rust
+install_rust() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT RUST ═══${RESET}"
+    echo ""
+    echo -e "${CYAN}Sẽ cài đặt:${RESET}"
+    echo "  • Rust (rustc, cargo)"
+    echo "  • rust-analyzer (LSP)"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt Rust...${RESET}"
+        sudo pacman -S --needed rust rust-analyzer
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt Rust!${RESET}"
+        echo ""
+        rustc --version
+        cargo --version
+    fi
+
+    pause_prompt
+}
+
+# Docker
+install_docker() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT DOCKER ═══${RESET}"
+    echo ""
+    echo -e "${CYAN}Sẽ cài đặt:${RESET}"
+    echo "  • Docker Engine"
+    echo "  • Docker Compose"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt Docker...${RESET}"
+        sudo pacman -S --needed docker docker-compose
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt Docker!${RESET}"
+        echo ""
+        echo -e "${YELLOW}Các lệnh quan trọng:${RESET}"
+        echo "  • Start:  sudo systemctl start docker"
+        echo "  • Enable: sudo systemctl enable docker"
+        echo "  • Add user to docker group: sudo usermod -aG docker \$USER"
+        echo ""
+        echo -en "${CYAN}Start Docker và thêm user vào group? (y/N):${RESET} "
+        read setup_now
+        if [[ "$setup_now" == "y" || "$setup_now" == "Y" ]]; then
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            sudo usermod -aG docker $USER
+            echo -e "${GREEN}✓ Hoàn tất! Đăng xuất và đăng nhập lại để áp dụng group.${RESET}"
+        fi
+    fi
+
+    pause_prompt
+}
+
+# Git Tools
+install_git_tools() {
+    show_header
+    echo -e "${YELLOW}═══ CÀI ĐẶT GIT & TOOLS ═══${RESET}"
+    echo ""
+    echo -e "${CYAN}Sẽ cài đặt:${RESET}"
+    echo "  • Git"
+    echo "  • GitHub CLI (gh)"
+    echo "  • Git LFS"
+    echo "  • Tig (text-mode interface)"
+    echo ""
+    echo -en "${CYAN}Tiếp tục? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo -e "${YELLOW}Đang cài đặt Git tools...${RESET}"
+        sudo pacman -S --needed git github-cli git-lfs tig
+
+        echo ""
+        echo -e "${GREEN}✓ Hoàn tất cài đặt Git Tools!${RESET}"
+        echo ""
+        git --version
+        gh --version
+        echo ""
+        echo -e "${YELLOW}Cấu hình Git:${RESET}"
+        echo "  git config --global user.name \"Your Name\""
+        echo "  git config --global user.email \"your@email.com\""
+        echo ""
+        echo -e "${YELLOW}GitHub CLI login:${RESET}"
+        echo "  gh auth login"
+    fi
+
+    pause_prompt
+}
+
+# Check installed dev tools
+check_dev_tools() {
+    show_header
+    echo -e "${YELLOW}═══ KIỂM TRA CÔNG CỤ ĐÃ CÀI ═══${RESET}"
+    echo ""
+
+    # Web Development
+    echo -e "${CYAN}── Web Development ──${RESET}"
+    command -v php &> /dev/null && echo -e "${GREEN}✓${RESET} PHP: $(php --version | head -1)" || echo -e "${RED}✗${RESET} PHP: Chưa cài"
+    command -v composer &> /dev/null && echo -e "${GREEN}✓${RESET} Composer: $(composer --version --no-ansi | head -1)" || echo -e "${RED}✗${RESET} Composer: Chưa cài"
+    command -v node &> /dev/null && echo -e "${GREEN}✓${RESET} Node.js: $(node --version)" || echo -e "${RED}✗${RESET} Node.js: Chưa cài"
+    command -v npm &> /dev/null && echo -e "${GREEN}✓${RESET} npm: $(npm --version)" || echo -e "${RED}✗${RESET} npm: Chưa cài"
+
+    echo ""
+    # Databases
+    echo -e "${CYAN}── Databases ──${RESET}"
+    command -v psql &> /dev/null && echo -e "${GREEN}✓${RESET} PostgreSQL: $(psql --version)" || echo -e "${RED}✗${RESET} PostgreSQL: Chưa cài"
+    command -v mysql &> /dev/null && echo -e "${GREEN}✓${RESET} MySQL/MariaDB: $(mysql --version)" || echo -e "${RED}✗${RESET} MySQL/MariaDB: Chưa cài"
+    command -v mongosh &> /dev/null && echo -e "${GREEN}✓${RESET} MongoDB: Đã cài" || echo -e "${RED}✗${RESET} MongoDB: Chưa cài"
+    command -v redis-cli &> /dev/null && echo -e "${GREEN}✓${RESET} Redis: $(redis-cli --version)" || echo -e "${RED}✗${RESET} Redis: Chưa cài"
+
+    echo ""
+    # Programming Languages
+    echo -e "${CYAN}── Programming Languages ──${RESET}"
+    command -v java &> /dev/null && echo -e "${GREEN}✓${RESET} Java: $(java --version | head -1)" || echo -e "${RED}✗${RESET} Java: Chưa cài"
+    command -v python &> /dev/null && echo -e "${GREEN}✓${RESET} Python: $(python --version)" || echo -e "${RED}✗${RESET} Python: Chưa cài"
+    command -v go &> /dev/null && echo -e "${GREEN}✓${RESET} Go: $(go version)" || echo -e "${RED}✗${RESET} Go: Chưa cài"
+    command -v rustc &> /dev/null && echo -e "${GREEN}✓${RESET} Rust: $(rustc --version)" || echo -e "${RED}✗${RESET} Rust: Chưa cài"
+
+    echo ""
+    # Tools
+    echo -e "${CYAN}── Tools ──${RESET}"
+    command -v docker &> /dev/null && echo -e "${GREEN}✓${RESET} Docker: $(docker --version)" || echo -e "${RED}✗${RESET} Docker: Chưa cài"
+    command -v git &> /dev/null && echo -e "${GREEN}✓${RESET} Git: $(git --version)" || echo -e "${RED}✗${RESET} Git: Chưa cài"
+
+    echo ""
+    pause_prompt
+}
+
 # Main loop
 main() {
     while true; do
@@ -602,6 +1226,7 @@ main() {
             11) view_logs ;;
             12) mirror_management ;;
             13) install_yay ;;
+            14) dev_tools_menu ;;
             0)
                 clear
                 echo -e "${GREEN}Tạm biệt!${RESET}"
