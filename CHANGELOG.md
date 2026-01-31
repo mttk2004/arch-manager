@@ -180,6 +180,147 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Existing installations will automatically get new UI
 - Old color variables still work but new gradient colors are recommended
 
+## [2.1.0] - 2026-01-26
+
+### Added - Font Manager 🔤
+
+**New comprehensive font management module** - Complete solution for installing and managing fonts on Arch Linux.
+
+#### Font Installation Features
+- **Nerd Fonts Support** (Option 13 → 1):
+  - FiraCode Nerd Font - Programming ligatures, clear readability
+  - JetBrainsMono Nerd Font - Designed for coding
+  - Hack Nerd Font - Sharp and clean
+  - Meslo Nerd Font - Fork of Menlo (macOS)
+  - SourceCodePro Nerd Font - Adobe professional font
+  - UbuntuMono Nerd Font - Modern and simple
+  - DejaVuSansMono Nerd Font - Classic monospace
+  - Option to install all popular Nerd Fonts at once
+  - Automatic AUR helper detection for fonts not in official repos
+
+- **System Fonts** (Option 13 → 2):
+  - Noto Fonts - Google's multilingual font family (recommended)
+  - DejaVu Fonts - Default for many Linux distributions
+  - Liberation Fonts - MS Office font replacements
+  - GNU FreeFont - MS font compatible alternative
+  - Ubuntu Font Family - Modern Ubuntu fonts
+  - Roboto Fonts - Google Material Design fonts
+  - Batch installation of all system fonts
+
+- **Emoji Fonts** (Option 13 → 3):
+  - Noto Color Emoji - Google's color emoji font
+  - JoyPixels - High-quality emoji font
+  - Twemoji - Twitter emoji font
+  - Full color emoji support for modern applications
+
+- **CJK Fonts** (Option 13 → 4):
+  - Noto CJK - Comprehensive CJK character support
+  - Adobe Source Han Sans - Professional sans-serif CJK
+  - Adobe Source Han Serif - Elegant serif CJK
+  - WenQuanYi - Chinese-focused fonts
+  - Support for Chinese, Japanese, and Korean languages
+
+- **Microsoft Fonts** (Option 13 → 5):
+  - MS Fonts from AUR (Arial, Times New Roman, Verdana, etc.)
+  - Warning system for licensing considerations
+  - Requires AUR helper (yay/paru)
+
+#### Font Management Features
+- **List Installed Fonts** (Option 13 → 6):
+  - Display all font packages on system
+  - Package descriptions and metadata
+  - Total count of installed fonts
+
+- **Search Fonts** (Option 13 → 7):
+  - Search in official repositories
+  - Search in AUR (if helper available)
+  - Keyword-based font discovery
+
+- **Remove Fonts** (Option 13 → 8):
+  - Interactive font removal with numbered selection
+  - Confirmation prompts for safety
+  - Automatic cache update after removal
+
+- **Update Font Cache** (Option 13 → 9):
+  - Manual font cache rebuild (`fc-cache -fv`)
+  - Automatic cache updates after install/remove
+  - Fixes font display issues
+
+#### Font Information & Testing
+- **List Font Families** (Option 13 → 10):
+  - Categorized by type (Monospace, Sans-Serif, Serif)
+  - Display available font families on system
+  - Quick reference for configuration
+
+- **Font Details** (Option 13 → 11):
+  - View detailed information about specific fonts
+  - Font file locations and properties
+  - Using `fc-list` for comprehensive data
+
+- **Font Display Test** (Option 13 → 12):
+  - Visual test for box drawing & powerline symbols
+  - Icons & symbols display test
+  - Emoji rendering test
+  - Programming ligatures showcase
+  - Numbers, math symbols, and special characters
+  - CJK character display
+  - Color palette test
+  - Alphabet display (uppercase/lowercase)
+  - Comprehensive visual verification
+
+#### Documentation
+- **FONT_MANAGER_GUIDE.md** - Complete font management guide:
+  - Introduction to font types
+  - Detailed descriptions of each font category
+  - Installation instructions for all font types
+  - Terminal configuration examples (Alacritty, Kitty, Wezterm, etc.)
+  - Code editor configuration (VSCode, Vim, Sublime, Emacs)
+  - Troubleshooting FAQ
+  - Tips & tricks for font optimization
+  - Manual font installation guide
+  - Font rendering optimization
+
+- **font-preview.sh** - Font display test script:
+  - Standalone preview script
+  - Checks for installed Nerd Fonts
+  - Comprehensive display test
+  - Font recommendations
+  - Terminal configuration examples
+  - Visual feedback for missing fonts
+
+#### UI Integration
+- New main menu section: **FONT CHỮ** 🔤
+- Menu option 13: "Quản lý font chữ (Nerd Fonts, Emoji, CJK...)"
+- Consistent UI with existing components
+- Icons and visual feedback throughout
+- Success/error messages for all operations
+- Progress indicators during installation
+
+#### Technical Implementation
+- Modular design in `fontman.zsh` (711 lines)
+- Integrated into main `pkgman.zsh`
+- Automatic AUR helper detection
+- Smart font package detection
+- Safe removal with dependency checking
+- Cross-platform font cache management
+- UTF-8 and emoji support validation
+
+### Enhanced
+- Main menu now includes Font Management section (option 13)
+- Menu numbering updated (Development Tools → 14, Install YAY → 15)
+- README updated with Font Manager features
+- Installation counts updated in menu prompt (0-15)
+
+### Files Added
+- `fontman.zsh` - Complete font management module
+- `FONT_MANAGER_GUIDE.md` - Comprehensive font guide (603 lines)
+- `font-preview.sh` - Font display test script (258 lines)
+
+### Files Modified
+- `pkgman.zsh` - Integrated font manager module
+- `readme.md` - Added font management documentation
+- `CHANGELOG.md` - This entry
+
 ## [Unreleased]
 
 ### Planned Features

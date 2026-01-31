@@ -30,7 +30,20 @@ Trình quản lý gói tập trung cho Arch Linux và các distro dựa trên Ar
 - 🌐 Quản lý mirror (reflector)
 - 🔧 Tự động cài đặt YAY nếu chưa có
 
-#### 🛠️ Môi trường phát triển (Development Tools) - MỚI!
+#### 🔤 Quản lý Font Chữ - MỚI!
+- **Nerd Fonts**: FiraCode, JetBrainsMono, Hack, Meslo (cho terminal/code editor)
+- **System Fonts**: Noto, DejaVu, Liberation, Ubuntu, Roboto
+- **Emoji Fonts**: Noto Emoji, JoyPixels, Twemoji
+- **CJK Fonts**: Hỗ trợ tiếng Trung, Nhật, Hàn
+- **MS Fonts**: Arial, Times New Roman, Verdana (từ AUR)
+- Liệt kê, tìm kiếm, xóa font
+- Cập nhật cache font tự động
+- Test hiển thị font và icons
+
+> 📖 Xem chi tiết: [FONT_MANAGER_GUIDE.md](FONT_MANAGER_GUIDE.md)  
+> 🚀 Quick Start: [FONT_QUICKSTART.md](FONT_QUICKSTART.md)
+
+#### 🛠️ Môi trường phát triển (Development Tools)
 - **Web Development**: PHP Stack, Laravel, Node.js (npm, yarn, pnpm)
 - **Databases**: PostgreSQL, MySQL/MariaDB, MongoDB, Redis
 - **Programming Languages**: Java (JDK), Python (pip, poetry), Go, Rust
@@ -139,6 +152,12 @@ pkgman
 11. Xem log gói
 12. Mirror management
 
+═══ FONT CHỮ ═══
+13. Quản lý font chữ
+
+═══ PHÁT TRIỂN ═══
+14. Môi trường phát triển
+
 0.  Thoát
 ```
 
@@ -149,6 +168,17 @@ pkgman
 2. Chọn nguồn: pacman (1), AUR (2), hoặc Flatpak (3)
 3. Nhập tên gói
 4. Xác nhận cài đặt
+
+#### Quản lý Font
+1. Chọn `13` - Quản lý font chữ
+2. Chọn loại font cần cài:
+   - Nerd Fonts (FiraCode, JetBrainsMono, Hack...)
+   - System Fonts (Noto, DejaVu, Liberation...)
+   - Emoji Fonts
+   - CJK Fonts (Chinese, Japanese, Korean)
+   - MS Fonts (cần AUR helper)
+3. Liệt kê, tìm kiếm hoặc xóa font đã cài
+4. Test hiển thị để kiểm tra font
 
 #### Dọn dẹp hệ thống
 1. Chọn `6` - Dọn dẹp cache
@@ -169,6 +199,12 @@ pkgman
 
 ### 🔄 Tự động phát hiện AUR Helper
 Script tự động phát hiện và sử dụng `yay` hoặc `paru` nếu có cài đặt.
+
+### 🔤 Quản lý Font tích hợp
+- Cài đặt font từ kho chính thức và AUR
+- Hỗ trợ đầy đủ Nerd Fonts cho developer
+- Tự động cập nhật cache sau khi cài/xóa
+- Test hiển thị trực quan với icons, emoji, ligatures
 
 ### 🎯 Giao diện menu trực quan
 - Sử dụng màu sắc để dễ phân biệt

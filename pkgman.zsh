@@ -295,6 +295,10 @@ show_main_menu() {
     menu_item "11" "Xem log gói" "📋"
     menu_item "12" "Mirror management" "🌐"
 
+    # Font Management Section
+    section_header "FONT CHỮ" "🔤"
+    menu_item "13" "Quản lý font chữ (Nerd Fonts, Emoji, CJK...)" "🔤"
+
     # Development Tools Section
     section_header "PHÁT TRIỂN" "${ICON_FIRE}"
     menu_item "14" "Môi trường phát triển (PHP, Node.js, Java, Database...)" "${ICON_TOOLS}"
@@ -302,7 +306,7 @@ show_main_menu() {
     # Install AUR Helper if not present
     if [[ -z "$aur_helper" ]]; then
         echo ""
-        menu_item "13" "${YELLOW}Cài đặt YAY (AUR helper)${RESET}" "${ICON_SPARKLE}"
+        menu_item "15" "${YELLOW}Cài đặt YAY (AUR helper)${RESET}" "${ICON_SPARKLE}"
     fi
 
     # Exit option
@@ -311,7 +315,7 @@ show_main_menu() {
     echo -e "  ${BOLD}${RED}0.${RESET}  ${ICON_ERROR}  Thoát"
     divider
     echo ""
-    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn chức năng [0-14]:${RESET} "
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn chức năng [0-15]:${RESET} "
 }
 
 # Cài đặt gói
@@ -1094,6 +1098,717 @@ pause_prompt() {
     echo -en "${DIM}Nhấn ${BOLD}Enter${RESET}${DIM} để tiếp tục...${RESET}"
     read
 }
+#!/usr/bin/env zsh
+
+# =============================================================================
+# FONT MANAGER - Quản lý font chữ cho Arch Linux
+# =============================================================================
+
+# Icons cho Font Manager
+ICON_FONT="🔤"
+ICON_NERD="󰊄"
+ICON_LIST="📋"
+
+# =============================================================================
+# Font Management Functions
+# =============================================================================
+
+# Menu chính Font Manager
+font_manager_menu() {
+    while true; do
+        show_header
+        create_box "QUẢN LÝ FONT CHỮ ${ICON_FONT}" 63
+        echo ""
+
+        section_header "Cài đặt Font" "${ICON_DOWNLOAD}"
+        menu_item "1" "Cài đặt Nerd Fonts (lập trình)" "${ICON_NERD}"
+        menu_item "2" "Cài đặt font hệ thống (Noto, DejaVu)" "${ICON_FONT}"
+        menu_item "3" "Cài đặt font emoji" "😀"
+        menu_item "4" "Cài đặt font CJK (Tiếng Trung/Nhật/Hàn)" "🇯🇵"
+        menu_item "5" "Cài đặt font Windows (MS Fonts)" "🪟"
+
+        section_header "Quản lý Font" "${ICON_TOOLS}"
+        menu_item "6" "Liệt kê font đã cài" "${ICON_LIST}"
+        menu_item "7" "Tìm kiếm font" "${ICON_SEARCH}"
+        menu_item "8" "Xóa font" "${ICON_TRASH}"
+        menu_item "9" "Cập nhật cache font" "🔄"
+
+        section_header "Kiểm tra & Xem" "${ICON_INFO}"
+        menu_item "10" "Xem font families khả dụng" "👁"
+        menu_item "11" "Xem chi tiết font" "${ICON_INFO}"
+        menu_item "12" "Test hiển thị font" "✨"
+
+        echo ""
+        divider
+        menu_item "0" "Quay lại menu chính" "${ICON_ARROW}"
+        divider
+        echo ""
+        echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn [0-12]:${RESET} "
+        read choice
+
+        case $choice in
+            1) install_nerd_fonts ;;
+            2) install_system_fonts ;;
+            3) install_emoji_fonts ;;
+            4) install_cjk_fonts ;;
+            5) install_ms_fonts ;;
+            6) list_installed_fonts ;;
+            7) search_fonts ;;
+            8) remove_font ;;
+            9) update_font_cache ;;
+            10) list_font_families ;;
+            11) show_font_info ;;
+            12) test_font_display ;;
+            0) return ;;
+            *)
+                echo -e "${RED}Lựa chọn không hợp lệ!${RESET}"
+                sleep 1
+                ;;
+        esac
+    done
+}
+
+# =============================================================================
+# Cài đặt Font Functions
+# =============================================================================
+
+# Cài đặt Nerd Fonts
+install_nerd_fonts() {
+    show_header
+    create_box "CÀI ĐẶT NERD FONTS ${ICON_NERD}" 63
+    echo ""
+
+    info "Nerd Fonts là các font được patch với icons cho terminal/code editor"
+    echo ""
+
+    section_header "Nerd Fonts phổ biến" "${ICON_STAR}"
+    echo ""
+    echo -e "  ${CYAN}1.${RESET} FiraCode Nerd Font (Khuyến nghị)"
+    echo -e "  ${CYAN}2.${RESET} JetBrainsMono Nerd Font"
+    echo -e "  ${CYAN}3.${RESET} Hack Nerd Font"
+    echo -e "  ${CYAN}4.${RESET} Meslo Nerd Font"
+    echo -e "  ${CYAN}5.${RESET} SourceCodePro Nerd Font"
+    echo -e "  ${CYAN}6.${RESET} UbuntuMono Nerd Font"
+    echo -e "  ${CYAN}7.${RESET} DejaVuSansMono Nerd Font"
+    echo -e "  ${CYAN}8.${RESET} Cài tất cả Nerd Fonts phổ biến"
+    echo -e "  ${CYAN}0.${RESET} Quay lại"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn font:${RESET} "
+    read choice
+
+    local fonts=()
+    case $choice in
+        1) fonts=("ttf-firacode-nerd") ;;
+        2) fonts=("ttf-jetbrains-mono-nerd") ;;
+        3) fonts=("ttf-hack-nerd") ;;
+        4)
+            local aur_helper=$(detect_aur_helper)
+            if [[ -n "$aur_helper" ]]; then
+                fonts=("ttf-meslo-nerd")
+            else
+                error "Cần AUR helper (yay/paru) để cài Meslo Nerd Font"
+                pause_prompt
+                return
+            fi
+            ;;
+        5) fonts=("ttf-sourcecodepro-nerd") ;;
+        6) fonts=("ttf-ubuntumono-nerd") ;;
+        7) fonts=("ttf-dejavu-nerd") ;;
+        8)
+            fonts=(
+                "ttf-firacode-nerd"
+                "ttf-jetbrains-mono-nerd"
+                "ttf-hack-nerd"
+                "ttf-sourcecodepro-nerd"
+                "ttf-ubuntumono-nerd"
+                "ttf-dejavu-nerd"
+            )
+            ;;
+        0) return ;;
+        *)
+            error "Lựa chọn không hợp lệ!"
+            pause_prompt
+            return
+            ;;
+    esac
+
+    if [[ ${#fonts[@]} -gt 0 ]]; then
+        echo ""
+        info "Đang cài đặt font(s)..."
+        echo ""
+
+        # Kiểm tra xem font có trong AUR không
+        local needs_aur=false
+        for font in "${fonts[@]}"; do
+            if ! pacman -Ss "^${font}$" &>/dev/null; then
+                needs_aur=true
+                break
+            fi
+        done
+
+        if [[ "$needs_aur" == true ]]; then
+            local aur_helper=$(detect_aur_helper)
+            if [[ -n "$aur_helper" ]]; then
+                $aur_helper -S --needed "${fonts[@]}"
+            else
+                error "Một số font cần AUR helper. Vui lòng cài yay/paru trước!"
+                pause_prompt
+                return
+            fi
+        else
+            sudo pacman -S --needed "${fonts[@]}"
+        fi
+
+        if [[ $? -eq 0 ]]; then
+            echo ""
+            success "Cài đặt thành công! ${ICON_ROCKET}"
+            echo ""
+            info "Đang cập nhật cache font..."
+            fc-cache -fv
+            echo ""
+            success "Hoàn tất! Vui lòng đóng và mở lại terminal."
+        else
+            echo ""
+            error "Cài đặt thất bại!"
+        fi
+    fi
+
+    pause_prompt
+}
+
+# Cài đặt System Fonts
+install_system_fonts() {
+    show_header
+    create_box "CÀI ĐẶT FONT HỆ THỐNG ${ICON_FONT}" 63
+    echo ""
+
+    info "Font hệ thống cho giao diện desktop và ứng dụng"
+    echo ""
+
+    section_header "Font families" "${ICON_LIST}"
+    echo ""
+    echo -e "  ${CYAN}1.${RESET} Noto Fonts (Google - Khuyến nghị)"
+    echo -e "  ${CYAN}2.${RESET} DejaVu Fonts"
+    echo -e "  ${CYAN}3.${RESET} Liberation Fonts (Thay thế MS Office)"
+    echo -e "  ${CYAN}4.${RESET} GNU FreeFont"
+    echo -e "  ${CYAN}5.${RESET} Ubuntu Fonts"
+    echo -e "  ${CYAN}6.${RESET} Roboto Fonts (Material Design)"
+    echo -e "  ${CYAN}7.${RESET} Cài tất cả font hệ thống"
+    echo -e "  ${CYAN}0.${RESET} Quay lại"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn font:${RESET} "
+    read choice
+
+    local fonts=()
+    case $choice in
+        1) fonts=("noto-fonts" "noto-fonts-extra") ;;
+        2) fonts=("ttf-dejavu" "ttf-dejavu-nerd") ;;
+        3) fonts=("ttf-liberation") ;;
+        4) fonts=("gnu-free-fonts") ;;
+        5) fonts=("ttf-ubuntu-font-family") ;;
+        6) fonts=("ttf-roboto" "ttf-roboto-mono") ;;
+        7)
+            fonts=(
+                "noto-fonts"
+                "noto-fonts-extra"
+                "ttf-dejavu"
+                "ttf-liberation"
+                "gnu-free-fonts"
+                "ttf-ubuntu-font-family"
+                "ttf-roboto"
+                "ttf-roboto-mono"
+            )
+            ;;
+        0) return ;;
+        *)
+            error "Lựa chọn không hợp lệ!"
+            pause_prompt
+            return
+            ;;
+    esac
+
+    if [[ ${#fonts[@]} -gt 0 ]]; then
+        echo ""
+        info "Đang cài đặt font(s)..."
+        echo ""
+        sudo pacman -S --needed "${fonts[@]}"
+
+        if [[ $? -eq 0 ]]; then
+            echo ""
+            success "Cài đặt thành công! ${ICON_ROCKET}"
+            echo ""
+            info "Đang cập nhật cache font..."
+            fc-cache -fv
+        else
+            echo ""
+            error "Cài đặt thất bại!"
+        fi
+    fi
+
+    pause_prompt
+}
+
+# Cài đặt Emoji Fonts
+install_emoji_fonts() {
+    show_header
+    create_box "CÀI ĐẶT FONT EMOJI 😀" 63
+    echo ""
+
+    info "Font emoji để hiển thị biểu tượng cảm xúc"
+    echo ""
+
+    local fonts=(
+        "noto-fonts-emoji"
+        "ttf-joypixels"
+        "ttf-twemoji"
+    )
+
+    echo -e "${YELLOW}Fonts sẽ cài đặt:${RESET}"
+    for font in "${fonts[@]}"; do
+        echo -e "  - ${font}"
+    done
+    echo ""
+
+    divider
+    echo -en "${CYAN}Tiếp tục cài đặt? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo ""
+        info "Đang cài đặt emoji fonts..."
+        echo ""
+        sudo pacman -S --needed "${fonts[@]}"
+
+        if [[ $? -eq 0 ]]; then
+            echo ""
+            success "Cài đặt thành công! ${ICON_ROCKET}"
+            echo ""
+            info "Đang cập nhật cache font..."
+            fc-cache -fv
+            echo ""
+            echo -e "${GREEN}Test emoji:${RESET} 😀 🎉 🚀 ❤️ 🔥 ✨ 🎨 💻"
+        else
+            echo ""
+            error "Cài đặt thất bại!"
+        fi
+    fi
+
+    pause_prompt
+}
+
+# Cài đặt CJK Fonts
+install_cjk_fonts() {
+    show_header
+    create_box "CÀI ĐẶT FONT CJK 🇯🇵🇨🇳🇰🇷" 63
+    echo ""
+
+    info "Font cho tiếng Trung, Nhật, Hàn (Chinese, Japanese, Korean)"
+    echo ""
+
+    section_header "CJK Font packages" "${ICON_LIST}"
+    echo ""
+    echo -e "  ${CYAN}1.${RESET} Noto CJK (Google - Khuyến nghị)"
+    echo -e "  ${CYAN}2.${RESET} Adobe Source Han Sans"
+    echo -e "  ${CYAN}3.${RESET} Adobe Source Han Serif"
+    echo -e "  ${CYAN}4.${RESET} WenQuanYi (Chinese)"
+    echo -e "  ${CYAN}5.${RESET} Cài tất cả CJK fonts"
+    echo -e "  ${CYAN}0.${RESET} Quay lại"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn font:${RESET} "
+    read choice
+
+    local fonts=()
+    case $choice in
+        1) fonts=("noto-fonts-cjk") ;;
+        2) fonts=("adobe-source-han-sans-otc-fonts") ;;
+        3) fonts=("adobe-source-han-serif-otc-fonts") ;;
+        4) fonts=("wqy-zenhei" "wqy-microhei") ;;
+        5)
+            fonts=(
+                "noto-fonts-cjk"
+                "adobe-source-han-sans-otc-fonts"
+                "adobe-source-han-serif-otc-fonts"
+                "wqy-zenhei"
+            )
+            ;;
+        0) return ;;
+        *)
+            error "Lựa chọn không hợp lệ!"
+            pause_prompt
+            return
+            ;;
+    esac
+
+    if [[ ${#fonts[@]} -gt 0 ]]; then
+        echo ""
+        info "Đang cài đặt font(s)..."
+        echo ""
+        sudo pacman -S --needed "${fonts[@]}"
+
+        if [[ $? -eq 0 ]]; then
+            echo ""
+            success "Cài đặt thành công! ${ICON_ROCKET}"
+            echo ""
+            info "Đang cập nhật cache font..."
+            fc-cache -fv
+            echo ""
+            echo -e "${GREEN}Test CJK:${RESET} 你好 こんにちは 안녕하세요"
+        else
+            echo ""
+            error "Cài đặt thất bại!"
+        fi
+    fi
+
+    pause_prompt
+}
+
+# Cài đặt MS Fonts
+install_ms_fonts() {
+    show_header
+    create_box "CÀI ĐẶT FONT MICROSOFT 🪟" 63
+    echo ""
+
+    warning "Font Microsoft cần AUR helper và có thể vi phạm bản quyền!"
+    echo ""
+    info "Bao gồm: Arial, Times New Roman, Verdana, Comic Sans, v.v."
+    echo ""
+
+    local aur_helper=$(detect_aur_helper)
+    if [[ -z "$aur_helper" ]]; then
+        error "Cần AUR helper (yay/paru) để cài MS Fonts!"
+        echo ""
+        info "Vui lòng cài yay/paru trước (chọn option 13 ở menu chính)"
+        pause_prompt
+        return
+    fi
+
+    divider
+    echo -en "${CYAN}Tiếp tục cài đặt MS Fonts? (y/N):${RESET} "
+    read confirm
+
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo ""
+        info "Đang cài đặt MS Fonts từ AUR..."
+        echo ""
+        $aur_helper -S --needed ttf-ms-fonts
+
+        if [[ $? -eq 0 ]]; then
+            echo ""
+            success "Cài đặt thành công! ${ICON_ROCKET}"
+            echo ""
+            info "Đang cập nhật cache font..."
+            fc-cache -fv
+        else
+            echo ""
+            error "Cài đặt thất bại!"
+        fi
+    fi
+
+    pause_prompt
+}
+
+# =============================================================================
+# Quản lý Font Functions
+# =============================================================================
+
+# Liệt kê font đã cài
+list_installed_fonts() {
+    show_header
+    create_box "FONT ĐÃ CÀI ĐẶT ${ICON_LIST}" 63
+    echo ""
+
+    info "Liệt kê các gói font đã cài đặt..."
+    echo ""
+
+    local font_packages=$(pacman -Qq | grep -E 'font|ttf-|otf-|noto-' | sort)
+
+    if [[ -n "$font_packages" ]]; then
+        section_header "Gói font đã cài" "${ICON_PACKAGE}"
+        echo ""
+
+        local count=0
+        while IFS= read -r pkg; do
+            count=$((count + 1))
+            local desc=$(pacman -Qi "$pkg" 2>/dev/null | grep "Description" | cut -d: -f2- | xargs)
+            echo -e "  ${CYAN}$count.${RESET} ${BOLD}$pkg${RESET}"
+            if [[ -n "$desc" ]]; then
+                echo -e "     ${DIM}$desc${RESET}"
+            fi
+        done <<< "$font_packages"
+
+        echo ""
+        success "Tổng số: $count gói font"
+    else
+        warning "Không tìm thấy gói font nào!"
+    fi
+
+    echo ""
+    divider
+    echo ""
+    info "Để xem chi tiết font families, chọn option 10"
+
+    pause_prompt
+}
+
+# Tìm kiếm font
+search_fonts() {
+    show_header
+    create_box "TÌM KIẾM FONT ${ICON_SEARCH}" 63
+    echo ""
+
+    echo -en "${CYAN}Nhập từ khóa tìm kiếm:${RESET} "
+    read keyword
+
+    if [[ -z "$keyword" ]]; then
+        warning "Vui lòng nhập từ khóa!"
+        pause_prompt
+        return
+    fi
+
+    echo ""
+    info "Đang tìm kiếm font '$keyword'..."
+    echo ""
+
+    section_header "Kho chính thức (pacman)" "${ICON_PACKAGE}"
+    echo ""
+    pacman -Ss "$keyword" | grep -E 'font|ttf-|otf-' | head -20
+
+    local aur_helper=$(detect_aur_helper)
+    if [[ -n "$aur_helper" ]]; then
+        echo ""
+        section_header "AUR" "${ICON_STAR}"
+        echo ""
+        $aur_helper -Ss "$keyword" | grep -E 'font|ttf-|otf-' | head -20
+    fi
+
+    pause_prompt
+}
+
+# Xóa font
+remove_font() {
+    show_header
+    create_box "XÓA FONT ${ICON_TRASH}" 63
+    echo ""
+
+    info "Liệt kê các gói font có thể xóa..."
+    echo ""
+
+    local font_packages=$(pacman -Qq | grep -E 'font|ttf-|otf-|noto-' | sort)
+
+    if [[ -z "$font_packages" ]]; then
+        warning "Không tìm thấy gói font nào!"
+        pause_prompt
+        return
+    fi
+
+    local -a fonts_array
+    local count=0
+    while IFS= read -r pkg; do
+        count=$((count + 1))
+        fonts_array+=("$pkg")
+        echo -e "  ${CYAN}$count.${RESET} $pkg"
+    done <<< "$font_packages"
+
+    echo ""
+    divider
+    echo -en "${CYAN}Nhập số thứ tự font cần xóa (0 để hủy):${RESET} "
+    read choice
+
+    if [[ "$choice" -eq 0 ]] 2>/dev/null; then
+        return
+    fi
+
+    if [[ "$choice" -gt 0 && "$choice" -le "${#fonts_array[@]}" ]] 2>/dev/null; then
+        local selected_font="${fonts_array[$choice]}"
+        echo ""
+        warning "Sắp xóa: ${BOLD}$selected_font${RESET}"
+        echo ""
+        echo -en "${RED}Xác nhận xóa? (y/N):${RESET} "
+        read confirm
+
+        if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+            echo ""
+            info "Đang xóa font..."
+            echo ""
+            sudo pacman -Rns "$selected_font"
+
+            if [[ $? -eq 0 ]]; then
+                echo ""
+                success "Xóa thành công!"
+                echo ""
+                info "Đang cập nhật cache font..."
+                fc-cache -fv
+            else
+                echo ""
+                error "Xóa thất bại!"
+            fi
+        fi
+    else
+        error "Lựa chọn không hợp lệ!"
+    fi
+
+    pause_prompt
+}
+
+# Cập nhật font cache
+update_font_cache() {
+    show_header
+    create_box "CẬP NHẬT CACHE FONT 🔄" 63
+    echo ""
+
+    info "Đang quét và cập nhật cache font..."
+    echo ""
+
+    fc-cache -fv
+
+    if [[ $? -eq 0 ]]; then
+        echo ""
+        success "Cập nhật cache thành công! ${ICON_ROCKET}"
+    else
+        echo ""
+        error "Cập nhật cache thất bại!"
+    fi
+
+    pause_prompt
+}
+
+# =============================================================================
+# Kiểm tra & Xem Font Functions
+# =============================================================================
+
+# Liệt kê font families
+list_font_families() {
+    show_header
+    create_box "FONT FAMILIES KHẢ DỤNG 👁" 63
+    echo ""
+
+    info "Liệt kê tất cả font families có sẵn trên hệ thống..."
+    echo ""
+
+    section_header "Monospace Fonts (Code/Terminal)" "${ICON_NERD}"
+    echo ""
+    fc-list : family | grep -i 'mono\|nerd\|code\|hack\|fira' | sort -u | head -20
+
+    echo ""
+    section_header "Sans-Serif Fonts" "${ICON_FONT}"
+    echo ""
+    fc-list : family | grep -i 'sans\|arial\|helvetica\|roboto' | sort -u | head -20
+
+    echo ""
+    section_header "Serif Fonts" "${ICON_FONT}"
+    echo ""
+    fc-list : family | grep -i 'serif\|times\|georgia' | sort -u | head -15
+
+    echo ""
+    divider
+    echo ""
+    info "Để xem tất cả: ${CYAN}fc-list : family | sort -u${RESET}"
+
+    pause_prompt
+}
+
+# Xem chi tiết font
+show_font_info() {
+    show_header
+    create_box "CHI TIẾT FONT ${ICON_INFO}" 63
+    echo ""
+
+    echo -en "${CYAN}Nhập tên font (vd: FiraCode):${RESET} "
+    read font_name
+
+    if [[ -z "$font_name" ]]; then
+        warning "Vui lòng nhập tên font!"
+        pause_prompt
+        return
+    fi
+
+    echo ""
+    info "Chi tiết font '$font_name'..."
+    echo ""
+
+    fc-list | grep -i "$font_name"
+
+    if [[ $? -ne 0 ]]; then
+        echo ""
+        warning "Không tìm thấy font '$font_name'!"
+    fi
+
+    pause_prompt
+}
+
+# Test hiển thị font
+test_font_display() {
+    show_header
+    create_box "TEST HIỂN THỊ FONT ✨" 63
+    echo ""
+
+    echo -e "╔═══════════════════════════════════════════════════════════╗"
+    echo -e "║                   ${BOLD}FONT DISPLAY TEST${RESET}                        ║"
+    echo -e "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+
+    section_header "Box Drawing & Powerline" "╔╗"
+    echo ""
+    echo -e "  ╔═╗ ╚═╝ ║ ═ ╠╣ ╬ ╭─╮ ╰─╯ │ ─ ┌┐└┘ ├┤ ┬┴ ┼"
+    echo -e "                     "
+    echo ""
+
+    section_header "Icons & Symbols" "${ICON_STAR}"
+    echo ""
+    echo -e "  ✓ ✗ ⚠ ℹ 🚀 📦 🗑 🔍 ⬆ ⬇ 🧹 🛡 🔧 ✨"
+    echo -e "  🔥 ☑ ➜ ⭐ 💻 🌐 🗄 📋 🎨 🎉 ❤️ 🐧"
+    echo ""
+
+    section_header "Emoji" "😀"
+    echo ""
+    echo -e "  😀 😃 😄 😁 😊 🥰 😍 🤩 😎 🤓"
+    echo -e "  👍 👎 👏 🙌 💪 🤝 ✌️ 🤘 👋 🖐"
+    echo ""
+
+    section_header "Programming Ligatures" "${ICON_NERD}"
+    echo ""
+    echo -e "  != == === !== <= >= => -> <- <> || && ++ --"
+    echo -e "  /** */ // /* */ <!-- --> := :: .. ... |>"
+    echo ""
+
+    section_header "Numbers & Math" "🔢"
+    echo ""
+    echo -e "  0123456789 + - × ÷ = ≠ ≤ ≥ ± ∞ √ ∑ ∫"
+    echo ""
+
+    section_header "CJK Characters" "🇯🇵"
+    echo ""
+    echo -e "  你好世界 こんにちは世界 안녕하세요 세상"
+    echo ""
+
+    section_header "Colors" "🎨"
+    echo ""
+    echo -e "  ${RED}██${RESET} ${GREEN}██${RESET} ${YELLOW}██${RESET} ${BLUE}██${RESET} ${PURPLE}██${RESET} ${CYAN}██${RESET} ${WHITE}██${RESET}"
+    echo ""
+
+    section_header "Alphabet (Aa-Zz)" "🔤"
+    echo ""
+    echo -e "  ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    echo -e "  abcdefghijklmnopqrstuvwxyz"
+    echo ""
+
+    divider
+    echo ""
+
+    info "Nếu bạn thấy ô vuông (□) thay vì icon/emoji:"
+    echo -e "  → Cài thêm font emoji: ${CYAN}option 3${RESET}"
+    echo -e "  → Cài Nerd Fonts: ${CYAN}option 1${RESET}"
+    echo ""
+    info "Đề xuất font cho terminal/code:"
+    echo -e "  ${GREEN}✓${RESET} FiraCode Nerd Font Mono"
+    echo -e "  ${GREEN}✓${RESET} JetBrainsMono Nerd Font Mono"
+    echo -e "  ${GREEN}✓${RESET} Hack Nerd Font Mono"
+
+    pause_prompt
+}
 
 # =============================================================================
 # DEVELOPMENT TOOLS - Môi trường phát triển
@@ -1740,8 +2455,9 @@ main() {
             10) downgrade_package ;;
             11) view_logs ;;
             12) mirror_management ;;
-            13) install_yay ;;
+            13) font_manager_menu ;;
             14) dev_tools_menu ;;
+            15) install_yay ;;
             0)
                 clear
                 echo -e "${GREEN}Tạm biệt!${RESET}"
