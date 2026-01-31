@@ -4,7 +4,11 @@
 # Arch Package Manager - Trình quản lý gói tập trung cho Arch Linux
 # =============================================================================
 
-# Màu sắc
+# =============================================================================
+# UI Components - Inspired by Laravel CLI
+# =============================================================================
+
+# Màu sắc cơ bản
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -13,6 +17,206 @@ MAGENTA='\033[0;35m'
 CYAN='\033[0;36m'
 WHITE='\033[1;37m'
 RESET='\033[0m'
+
+# Màu sắc mở rộng (256 colors)
+BOLD='\033[1m'
+DIM='\033[2m'
+ITALIC='\033[3m'
+UNDERLINE='\033[4m'
+
+# Gradient colors
+PURPLE='\033[38;5;135m'
+PINK='\033[38;5;205m'
+ORANGE='\033[38;5;214m'
+LIME='\033[38;5;154m'
+SKY='\033[38;5;117m'
+VIOLET='\033[38;5;141m'
+GOLD='\033[38;5;220m'
+
+# Background colors
+BG_RED='\033[41m'
+BG_GREEN='\033[42m'
+BG_YELLOW='\033[43m'
+BG_BLUE='\033[44m'
+BG_MAGENTA='\033[45m'
+BG_CYAN='\033[46m'
+BG_WHITE='\033[47m'
+
+# Icons & Emojis
+ICON_SUCCESS="✓"
+ICON_ERROR="✗"
+ICON_WARNING="⚠"
+ICON_INFO="ℹ"
+ICON_ROCKET="🚀"
+ICON_PACKAGE="📦"
+ICON_TRASH="🗑"
+ICON_SEARCH="🔍"
+ICON_UPDATE="⬆"
+ICON_CLEAN="🧹"
+ICON_SHIELD="🛡"
+ICON_TOOLS="🔧"
+ICON_DOWNLOAD="⬇"
+ICON_SPARKLE="✨"
+ICON_FIRE="🔥"
+ICON_CHECK="☑"
+ICON_ARROW="➜"
+ICON_STAR="⭐"
+
+# Spinner frames
+SPINNER_FRAMES=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+
+# Box drawing characters
+BOX_TL="╔"  # Top left
+BOX_TR="╗"  # Top right
+BOX_BL="╚"  # Bottom left
+BOX_BR="╝"  # Bottom right
+BOX_H="═"   # Horizontal
+BOX_V="║"   # Vertical
+BOX_ML="╠"  # Middle left
+BOX_MR="╣"  # Middle right
+
+# Rounded box
+RBOX_TL="╭"
+RBOX_TR="╮"
+RBOX_BL="╰"
+RBOX_BR="╯"
+RBOX_H="─"
+RBOX_V="│"
+
+# =============================================================================
+# UI Helper Functions
+# =============================================================================
+
+# In đậm
+bold() {
+    echo -e "${BOLD}$1${RESET}"
+}
+
+# In mờ
+dim() {
+    echo -e "${DIM}$1${RESET}"
+}
+
+# Hiển thị spinner với message
+spinner() {
+    local pid=$1
+    local message=$2
+    local i=0
+
+    while kill -0 $pid 2>/dev/null; do
+        i=$(( (i+1) % 10 ))
+        echo -ne "\r${CYAN}${SPINNER_FRAMES[$i]}${RESET} ${message}..."
+        sleep 0.1
+    done
+    echo -ne "\r${GREEN}${ICON_SUCCESS}${RESET} ${message}... ${GREEN}Done!${RESET}\n"
+}
+
+# Progress bar
+progress_bar() {
+    local current=$1
+    local total=$2
+    local width=50
+    local percentage=$((current * 100 / total))
+    local completed=$((width * current / total))
+    local remaining=$((width - completed))
+
+    echo -ne "\r${CYAN}["
+    printf "%${completed}s" | tr ' ' '█'
+    printf "%${remaining}s" | tr ' ' '░'
+    echo -ne "]${RESET} ${BOLD}${percentage}%${RESET}"
+}
+
+# Success message
+success() {
+    echo -e "${GREEN}${ICON_SUCCESS}${RESET} ${BOLD}$1${RESET}"
+}
+
+# Error message
+error() {
+    echo -e "${RED}${ICON_ERROR}${RESET} ${BOLD}$1${RESET}"
+}
+
+# Warning message
+warning() {
+    echo -e "${YELLOW}${ICON_WARNING}${RESET} ${BOLD}$1${RESET}"
+}
+
+# Info message
+info() {
+    echo -e "${CYAN}${ICON_INFO}${RESET} ${BOLD}$1${RESET}"
+}
+
+# Badge (label với background)
+badge() {
+    local text=$1
+    local color=$2
+
+    case $color in
+        "success") echo -e "${BG_GREEN}${WHITE}${BOLD} $text ${RESET}" ;;
+        "error") echo -e "${BG_RED}${WHITE}${BOLD} $text ${RESET}" ;;
+        "warning") echo -e "${BG_YELLOW}${WHITE}${BOLD} $text ${RESET}" ;;
+        "info") echo -e "${BG_CYAN}${WHITE}${BOLD} $text ${RESET}" ;;
+        *) echo -e "${BG_BLUE}${WHITE}${BOLD} $text ${RESET}" ;;
+    esac
+}
+
+# Tạo box với title
+create_box() {
+    local title=$1
+    local width=${2:-65}
+    local padding=$(( (width - ${#title} - 2) / 2 ))
+
+    echo -e "${CYAN}${BOX_TL}$(printf "${BOX_H}%.0s" $(seq 1 $width))${BOX_TR}${RESET}"
+    printf "${CYAN}${BOX_V}${RESET}"
+    printf "%${padding}s" ""
+    echo -ne "${BOLD}${PURPLE}${title}${RESET}"
+    printf "%$((width - padding - ${#title}))s" ""
+    echo -e "${CYAN}${BOX_V}${RESET}"
+    echo -e "${CYAN}${BOX_BL}$(printf "${BOX_H}%.0s" $(seq 1 $width))${BOX_BR}${RESET}"
+}
+
+# Tạo rounded box
+create_rounded_box() {
+    local content=$1
+    local width=${2:-65}
+
+    echo -e "${SKY}${RBOX_TL}$(printf "${RBOX_H}%.0s" $(seq 1 $width))${RBOX_TR}${RESET}"
+    echo -e "${SKY}${RBOX_V}${RESET} ${content}"
+    echo -e "${SKY}${RBOX_BL}$(printf "${RBOX_H}%.0s" $(seq 1 $width))${RBOX_BR}${RESET}"
+}
+
+# Section header
+section_header() {
+    local title=$1
+    local icon=$2
+    echo ""
+    echo -e "${BOLD}${PURPLE}${icon} ${title}${RESET}"
+    echo -e "${DIM}$(printf "─%.0s" $(seq 1 65))${RESET}"
+}
+
+# Menu item
+menu_item() {
+    local number=$1
+    local text=$2
+    local icon=$3
+
+    if [[ -n "$icon" ]]; then
+        echo -e "  ${BOLD}${CYAN}${number}.${RESET} ${icon}  ${text}"
+    else
+        echo -e "  ${BOLD}${CYAN}${number}.${RESET}  ${text}"
+    fi
+}
+
+# Divider
+divider() {
+    echo -e "${DIM}$(printf "─%.0s" $(seq 1 65))${RESET}"
+}
+
+# Gradient text (simulation)
+gradient_text() {
+    local text=$1
+    echo -e "${PURPLE}${BOLD}${text}${RESET}"
+}
 
 # Kiểm tra AUR helper có sẵn
 detect_aur_helper() {
@@ -33,9 +237,20 @@ has_flatpak() {
 # Hiển thị header
 show_header() {
     clear
-    echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════╗${RESET}"
-    echo -e "${CYAN}║${RESET}          ${MAGENTA}ARCH PACKAGE MANAGER${RESET} - Quản lý gói tập trung         ${CYAN}║${RESET}"
-    echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════╝${RESET}"
+
+    # ASCII Art Header with gradient
+    echo ""
+    echo -e "${PURPLE}${BOLD}     █████╗ ██████╗  ██████╗██╗  ██╗${RESET}"
+    echo -e "${PURPLE}${BOLD}    ██╔══██╗██╔══██╗██╔════╝██║  ██║${RESET}"
+    echo -e "${VIOLET}${BOLD}    ███████║██████╔╝██║     ███████║${RESET}"
+    echo -e "${PINK}${BOLD}    ██╔══██║██╔══██╗██║     ██╔══██║${RESET}"
+    echo -e "${PINK}${BOLD}    ██║  ██║██║  ██║╚██████╗██║  ██║${RESET}"
+    echo -e "${DIM}    ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝${RESET}"
+
+    echo ""
+    echo -e "${CYAN}${BOX_TL}$(printf "${BOX_H}%.0s" $(seq 1 65))${BOX_TR}${RESET}"
+    echo -e "${CYAN}${BOX_V}${RESET}        ${BOLD}${GOLD}PACKAGE MANAGER${RESET} ${DIM}Quản lý gói tập trung cho Arch Linux${RESET}     ${CYAN}${BOX_V}${RESET}"
+    echo -e "${CYAN}${BOX_BL}$(printf "${BOX_H}%.0s" $(seq 1 65))${BOX_BR}${RESET}"
     echo ""
 }
 
@@ -45,96 +260,140 @@ show_main_menu() {
     local flatpak_status=""
 
     if has_flatpak; then
-        flatpak_status="${GREEN}✓${RESET}"
+        flatpak_status="$(badge "INSTALLED" "success")"
     else
-        flatpak_status="${RED}✗${RESET}"
+        flatpak_status="$(badge "NOT INSTALLED" "error")"
     fi
 
-    echo -e "${YELLOW}═══ HỆ THỐNG GÓI ═══${RESET}"
-    echo -e "${GREEN}1.${RESET}  Cài đặt gói"
-    echo -e "${GREEN}2.${RESET}  Xóa gói"
-    echo -e "${GREEN}3.${RESET}  Cập nhật hệ thống"
-    echo -e "${GREEN}4.${RESET}  Tìm kiếm gói"
-    echo -e "${GREEN}5.${RESET}  Xem thông tin gói"
-    echo ""
-    echo -e "${YELLOW}═══ BẢO TRÌ HỆ THỐNG ═══${RESET}"
-    echo -e "${GREEN}6.${RESET}  Dọn dẹp cache"
-    echo -e "${GREEN}7.${RESET}  Xóa gói orphan (không cần thiết)"
-    echo -e "${GREEN}8.${RESET}  Xem danh sách gói đã cài"
-    echo -e "${GREEN}9.${RESET}  Kiểm tra gói bị hỏng"
-    echo ""
-    echo -e "${YELLOW}═══ NÂNG CAO ═══${RESET}"
-    echo -e "${GREEN}10.${RESET} Downgrade gói"
-    echo -e "${GREEN}11.${RESET} Xem log gói"
-    echo -e "${GREEN}12.${RESET} Mirror management"
-    echo ""
-    echo -e "${YELLOW}═══ PHÁT TRIỂN (DEV TOOLS) ═══${RESET}"
-    echo -e "${GREEN}14.${RESET} Môi trường phát triển (PHP, Node.js, Java, Database...)"
-    echo ""
-
+    # System status bar
+    echo -e "${SKY}${RBOX_TL}$(printf "${RBOX_H}%.0s" $(seq 1 63))${RBOX_TR}${RESET}"
     if [[ -n "$aur_helper" ]]; then
-        echo -e "${YELLOW}AUR Helper:${RESET} ${GREEN}$aur_helper${RESET} ✓"
+        echo -e "${SKY}${RBOX_V}${RESET} ${ICON_SHIELD} AUR Helper: $(badge "$aur_helper" "success")  ${ICON_PACKAGE} Flatpak: ${flatpak_status} ${SKY}${RBOX_V}${RESET}"
     else
-        echo -e "${YELLOW}AUR Helper:${RESET} ${RED}Chưa cài đặt${RESET}"
-        echo -e "${CYAN}13.${RESET} Cài đặt YAY (AUR helper)"
+        echo -e "${SKY}${RBOX_V}${RESET} ${ICON_WARNING} AUR Helper: $(badge "NOT INSTALLED" "warning")  ${ICON_PACKAGE} Flatpak: ${flatpak_status} ${SKY}${RBOX_V}${RESET}"
+    fi
+    echo -e "${SKY}${RBOX_BL}$(printf "${RBOX_H}%.0s" $(seq 1 63))${RBOX_BR}${RESET}"
+
+    # Package Management Section
+    section_header "HỆ THỐNG GÓI" "${ICON_PACKAGE}"
+    menu_item "1" "Cài đặt gói" "${ICON_DOWNLOAD}"
+    menu_item "2" "Xóa gói" "${ICON_TRASH}"
+    menu_item "3" "Cập nhật hệ thống" "${ICON_UPDATE}"
+    menu_item "4" "Tìm kiếm gói" "${ICON_SEARCH}"
+    menu_item "5" "Xem thông tin gói" "${ICON_INFO}"
+
+    # System Maintenance Section
+    section_header "BẢO TRÌ HỆ THỐNG" "${ICON_CLEAN}"
+    menu_item "6" "Dọn dẹp cache" "${ICON_CLEAN}"
+    menu_item "7" "Xóa gói orphan (không cần thiết)" "${ICON_TRASH}"
+    menu_item "8" "Xem danh sách gói đã cài" "${ICON_CHECK}"
+    menu_item "9" "Kiểm tra gói bị hỏng" "${ICON_SHIELD}"
+
+    # Advanced Section
+    section_header "NÂNG CAO" "${ICON_TOOLS}"
+    menu_item "10" "Downgrade gói" "⬇"
+    menu_item "11" "Xem log gói" "📋"
+    menu_item "12" "Mirror management" "🌐"
+
+    # Development Tools Section
+    section_header "PHÁT TRIỂN" "${ICON_FIRE}"
+    menu_item "14" "Môi trường phát triển (PHP, Node.js, Java, Database...)" "${ICON_TOOLS}"
+
+    # Install AUR Helper if not present
+    if [[ -z "$aur_helper" ]]; then
+        echo ""
+        menu_item "13" "${YELLOW}Cài đặt YAY (AUR helper)${RESET}" "${ICON_SPARKLE}"
     fi
 
-    echo -e "${YELLOW}Flatpak:${RESET} $flatpak_status"
-
+    # Exit option
     echo ""
-    echo -e "${RED}0.${RESET}  Thoát"
+    divider
+    echo -e "  ${BOLD}${RED}0.${RESET}  ${ICON_ERROR}  Thoát"
+    divider
     echo ""
-    echo -en "${CYAN}Chọn chức năng [0-14]:${RESET} "
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn chức năng [0-14]:${RESET} "
 }
 
 # Cài đặt gói
 install_package() {
     show_header
-    echo -e "${YELLOW}═══ CÀI ĐẶT GÓI ═══${RESET}"
-    echo -e "${GREEN}1.${RESET} Cài từ kho chính thức (pacman)"
+    create_box "CÀI ĐẶT GÓI ${ICON_DOWNLOAD}" 63
+    echo ""
 
     local aur_helper=$(detect_aur_helper)
+
+    menu_item "1" "Cài từ kho chính thức (pacman)" "${ICON_PACKAGE}"
+
     if [[ -n "$aur_helper" ]]; then
-        echo -e "${GREEN}2.${RESET} Cài từ AUR ($aur_helper)"
+        menu_item "2" "Cài từ AUR ($aur_helper)" "${ICON_STAR}"
     fi
 
     if has_flatpak; then
-        echo -e "${GREEN}3.${RESET} Cài từ Flatpak"
+        menu_item "3" "Cài từ Flatpak" "${ICON_PACKAGE}"
     fi
 
-    echo -e "${RED}0.${RESET} Quay lại"
     echo ""
-    echo -en "${CYAN}Chọn nguồn cài đặt:${RESET} "
+    menu_item "0" "Quay lại" "${ICON_ARROW}"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn nguồn cài đặt:${RESET} "
     read choice
 
     case $choice in
         1)
-            echo -en "${CYAN}Nhập tên gói cần cài:${RESET} "
+            echo ""
+            echo -en "${CYAN}${ICON_SEARCH} Nhập tên gói cần cài:${RESET} "
             read pkg
             if [[ -n "$pkg" ]]; then
-                echo -e "${YELLOW}Đang cài đặt $pkg...${RESET}"
+                echo ""
+                info "Đang cài đặt ${BOLD}${pkg}${RESET}..."
+                echo ""
                 sudo pacman -S $pkg
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Cài đặt ${BOLD}${pkg}${RESET} thành công!"
+                else
+                    error "Cài đặt ${BOLD}${pkg}${RESET} thất bại!"
+                fi
                 pause_prompt
             fi
             ;;
         2)
             if [[ -n "$aur_helper" ]]; then
-                echo -en "${CYAN}Nhập tên gói AUR cần cài:${RESET} "
+                echo ""
+                echo -en "${CYAN}${ICON_SEARCH} Nhập tên gói AUR cần cài:${RESET} "
                 read pkg
                 if [[ -n "$pkg" ]]; then
-                    echo -e "${YELLOW}Đang cài đặt $pkg từ AUR...${RESET}"
+                    echo ""
+                    info "Đang cài đặt ${BOLD}${pkg}${RESET} từ AUR..."
+                    echo ""
                     $aur_helper -S $pkg
+                    echo ""
+                    if [[ $? -eq 0 ]]; then
+                        success "Cài đặt ${BOLD}${pkg}${RESET} thành công!"
+                    else
+                        error "Cài đặt ${BOLD}${pkg}${RESET} thất bại!"
+                    fi
                     pause_prompt
                 fi
             fi
             ;;
         3)
             if has_flatpak; then
-                echo -en "${CYAN}Nhập tên gói Flatpak cần cài:${RESET} "
+                echo ""
+                echo -en "${CYAN}${ICON_SEARCH} Nhập tên gói Flatpak cần cài:${RESET} "
                 read pkg
                 if [[ -n "$pkg" ]]; then
-                    echo -e "${YELLOW}Đang cài đặt $pkg từ Flatpak...${RESET}"
+                    echo ""
+                    info "Đang cài đặt ${BOLD}${pkg}${RESET} từ Flatpak..."
+                    echo ""
                     flatpak install $pkg
+                    echo ""
+                    if [[ $? -eq 0 ]]; then
+                        success "Cài đặt ${BOLD}${pkg}${RESET} thành công!"
+                    else
+                        error "Cài đặt ${BOLD}${pkg}${RESET} thất bại!"
+                    fi
                     pause_prompt
                 fi
             fi
@@ -148,45 +407,76 @@ install_package() {
 # Xóa gói
 remove_package() {
     show_header
-    echo -e "${YELLOW}═══ XÓA GÓI ═══${RESET}"
-    echo -e "${GREEN}1.${RESET} Xóa gói (pacman) - giữ dependencies"
-    echo -e "${GREEN}2.${RESET} Xóa gói và dependencies không dùng"
+    create_box "XÓA GÓI ${ICON_TRASH}" 63
+    echo ""
+
+    menu_item "1" "Xóa gói (pacman) - giữ dependencies" "${ICON_TRASH}"
+    menu_item "2" "Xóa gói và dependencies không dùng" "${ICON_TRASH}"
 
     if has_flatpak; then
-        echo -e "${GREEN}3.${RESET} Xóa gói Flatpak"
+        menu_item "3" "Xóa gói Flatpak" "${ICON_TRASH}"
     fi
 
-    echo -e "${RED}0.${RESET} Quay lại"
     echo ""
-    echo -en "${CYAN}Chọn cách xóa:${RESET} "
+    menu_item "0" "Quay lại" "${ICON_ARROW}"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn cách xóa:${RESET} "
     read choice
 
     case $choice in
         1)
-            echo -en "${CYAN}Nhập tên gói cần xóa:${RESET} "
+            echo ""
+            echo -en "${CYAN}${ICON_SEARCH} Nhập tên gói cần xóa:${RESET} "
             read pkg
             if [[ -n "$pkg" ]]; then
-                echo -e "${YELLOW}Đang xóa $pkg...${RESET}"
+                echo ""
+                warning "Đang xóa ${BOLD}${pkg}${RESET}..."
+                echo ""
                 sudo pacman -R $pkg
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Xóa ${BOLD}${pkg}${RESET} thành công!"
+                else
+                    error "Xóa ${BOLD}${pkg}${RESET} thất bại!"
+                fi
                 pause_prompt
             fi
             ;;
         2)
-            echo -en "${CYAN}Nhập tên gói cần xóa:${RESET} "
+            echo ""
+            echo -en "${CYAN}${ICON_SEARCH} Nhập tên gói cần xóa:${RESET} "
             read pkg
             if [[ -n "$pkg" ]]; then
-                echo -e "${YELLOW}Đang xóa $pkg và dependencies...${RESET}"
+                echo ""
+                warning "Đang xóa ${BOLD}${pkg}${RESET} và dependencies..."
+                echo ""
                 sudo pacman -Rns $pkg
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Xóa ${BOLD}${pkg}${RESET} thành công!"
+                else
+                    error "Xóa ${BOLD}${pkg}${RESET} thất bại!"
+                fi
                 pause_prompt
             fi
             ;;
         3)
             if has_flatpak; then
-                echo -en "${CYAN}Nhập tên gói Flatpak cần xóa:${RESET} "
+                echo ""
+                echo -en "${CYAN}${ICON_SEARCH} Nhập tên gói Flatpak cần xóa:${RESET} "
                 read pkg
                 if [[ -n "$pkg" ]]; then
-                    echo -e "${YELLOW}Đang xóa $pkg từ Flatpak...${RESET}"
+                    echo ""
+                    warning "Đang xóa ${BOLD}${pkg}${RESET} từ Flatpak..."
+                    echo ""
                     flatpak uninstall $pkg
+                    echo ""
+                    if [[ $? -eq 0 ]]; then
+                        success "Xóa ${BOLD}${pkg}${RESET} thành công!"
+                    else
+                        error "Xóa ${BOLD}${pkg}${RESET} thất bại!"
+                    fi
                     pause_prompt
                 fi
             fi
@@ -200,48 +490,85 @@ remove_package() {
 # Cập nhật hệ thống
 update_system() {
     show_header
-    echo -e "${YELLOW}═══ CẬP NHẬT HỆ THỐNG ═══${RESET}"
-    echo -e "${GREEN}1.${RESET} Cập nhật gói chính thức (pacman)"
+    create_box "CẬP NHẬT HỆ THỐNG ${ICON_UPDATE}" 63
+    echo ""
 
     local aur_helper=$(detect_aur_helper)
+
+    menu_item "1" "Cập nhật gói chính thức (pacman)" "${ICON_PACKAGE}"
+
     if [[ -n "$aur_helper" ]]; then
-        echo -e "${GREEN}2.${RESET} Cập nhật tất cả (pacman + AUR)"
+        menu_item "2" "Cập nhật tất cả (pacman + AUR)" "${ICON_ROCKET}"
     fi
 
     if has_flatpak; then
-        echo -e "${GREEN}3.${RESET} Cập nhật Flatpak"
-        echo -e "${GREEN}4.${RESET} Cập nhật tất cả nguồn"
+        menu_item "3" "Cập nhật Flatpak" "${ICON_PACKAGE}"
+        menu_item "4" "Cập nhật tất cả nguồn" "${ICON_FIRE}"
     fi
 
-    echo -e "${RED}0.${RESET} Quay lại"
     echo ""
-    echo -en "${CYAN}Chọn loại cập nhật:${RESET} "
+    menu_item "0" "Quay lại" "${ICON_ARROW}"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn loại cập nhật:${RESET} "
     read choice
 
     case $choice in
         1)
-            echo -e "${YELLOW}Đang cập nhật hệ thống...${RESET}"
+            echo ""
+            info "Đang cập nhật hệ thống..."
+            echo ""
             sudo pacman -Syu
+            echo ""
+            if [[ $? -eq 0 ]]; then
+                success "Cập nhật hệ thống thành công!"
+            else
+                error "Cập nhật hệ thống thất bại!"
+            fi
             pause_prompt
             ;;
         2)
             if [[ -n "$aur_helper" ]]; then
-                echo -e "${YELLOW}Đang cập nhật tất cả gói...${RESET}"
+                echo ""
+                info "Đang cập nhật tất cả gói..."
+                echo ""
                 $aur_helper -Syu
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Cập nhật tất cả gói thành công!"
+                else
+                    error "Cập nhật thất bại!"
+                fi
                 pause_prompt
             fi
             ;;
         3)
             if has_flatpak; then
-                echo -e "${YELLOW}Đang cập nhật Flatpak...${RESET}"
+                echo ""
+                info "Đang cập nhật Flatpak..."
+                echo ""
                 flatpak update
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Cập nhật Flatpak thành công!"
+                else
+                    error "Cập nhật Flatpak thất bại!"
+                fi
                 pause_prompt
             fi
             ;;
         4)
             if has_flatpak && [[ -n "$aur_helper" ]]; then
-                echo -e "${YELLOW}Đang cập nhật tất cả nguồn...${RESET}"
+                echo ""
+                info "Đang cập nhật tất cả nguồn..."
+                echo ""
                 $aur_helper -Syu && flatpak update
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Cập nhật tất cả nguồn thành công!"
+                else
+                    error "Cập nhật thất bại!"
+                fi
                 pause_prompt
             fi
             ;;
@@ -254,37 +581,50 @@ update_system() {
 # Tìm kiếm gói
 search_package() {
     show_header
-    echo -e "${YELLOW}═══ TÌM KIẾM GÓI ═══${RESET}"
-    echo -e "${GREEN}1.${RESET} Tìm trong kho chính thức"
+    create_box "TÌM KIẾM GÓI ${ICON_SEARCH}" 63
+    echo ""
 
     local aur_helper=$(detect_aur_helper)
+
+    menu_item "1" "Tìm trong kho chính thức" "${ICON_PACKAGE}"
+
     if [[ -n "$aur_helper" ]]; then
-        echo -e "${GREEN}2.${RESET} Tìm trong AUR"
+        menu_item "2" "Tìm trong AUR" "${ICON_STAR}"
     fi
 
     if has_flatpak; then
-        echo -e "${GREEN}3.${RESET} Tìm trong Flatpak"
+        menu_item "3" "Tìm trong Flatpak" "${ICON_PACKAGE}"
     fi
 
-    echo -e "${RED}0.${RESET} Quay lại"
     echo ""
-    echo -en "${CYAN}Chọn nguồn tìm kiếm:${RESET} "
+    menu_item "0" "Quay lại" "${ICON_ARROW}"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn nguồn tìm kiếm:${RESET} "
     read choice
 
     case $choice in
         1)
-            echo -en "${CYAN}Nhập từ khóa:${RESET} "
+            echo ""
+            echo -en "${CYAN}${ICON_SEARCH} Nhập từ khóa:${RESET} "
             read keyword
             if [[ -n "$keyword" ]]; then
+                echo ""
+                info "Đang tìm kiếm ${BOLD}${keyword}${RESET}..."
+                echo ""
                 pacman -Ss $keyword
                 pause_prompt
             fi
             ;;
         2)
             if [[ -n "$aur_helper" ]]; then
-                echo -en "${CYAN}Nhập từ khóa:${RESET} "
+                echo ""
+                echo -en "${CYAN}${ICON_SEARCH} Nhập từ khóa:${RESET} "
                 read keyword
                 if [[ -n "$keyword" ]]; then
+                    echo ""
+                    info "Đang tìm kiếm ${BOLD}${keyword}${RESET} trong AUR..."
+                    echo ""
                     $aur_helper -Ss $keyword
                     pause_prompt
                 fi
@@ -292,9 +632,13 @@ search_package() {
             ;;
         3)
             if has_flatpak; then
-                echo -en "${CYAN}Nhập từ khóa:${RESET} "
+                echo ""
+                echo -en "${CYAN}${ICON_SEARCH} Nhập từ khóa:${RESET} "
                 read keyword
                 if [[ -n "$keyword" ]]; then
+                    echo ""
+                    info "Đang tìm kiếm ${BOLD}${keyword}${RESET} trong Flatpak..."
+                    echo ""
                     flatpak search $keyword
                     pause_prompt
                 fi
@@ -309,18 +653,25 @@ search_package() {
 # Xem thông tin gói
 package_info() {
     show_header
-    echo -e "${YELLOW}═══ THÔNG TIN GÓI ═══${RESET}"
-    echo -en "${CYAN}Nhập tên gói:${RESET} "
+    create_box "THÔNG TIN GÓI ${ICON_INFO}" 63
+    echo ""
+    echo -en "${CYAN}${ICON_SEARCH} Nhập tên gói:${RESET} "
     read pkg
 
     if [[ -n "$pkg" ]]; then
         echo ""
-        echo -e "${YELLOW}Thông tin từ pacman:${RESET}"
+        info "Đang lấy thông tin về ${BOLD}${pkg}${RESET}..."
+        echo ""
+        divider
+        echo -e "${BOLD}${PURPLE}Thông tin từ pacman:${RESET}"
+        divider
         pacman -Qi $pkg 2>/dev/null || pacman -Si $pkg 2>/dev/null
 
         if has_flatpak; then
             echo ""
-            echo -e "${YELLOW}Kiểm tra Flatpak:${RESET}"
+            divider
+            echo -e "${BOLD}${PURPLE}Kiểm tra Flatpak:${RESET}"
+            divider
             flatpak info $pkg 2>/dev/null
         fi
 
@@ -331,47 +682,85 @@ package_info() {
 # Dọn dẹp cache
 clean_cache() {
     show_header
-    echo -e "${YELLOW}═══ DỌN DẸP CACHE ═══${RESET}"
-    echo -e "${GREEN}1.${RESET} Xóa cache gói cũ (giữ 3 phiên bản gần nhất)"
-    echo -e "${GREEN}2.${RESET} Xóa toàn bộ cache"
-    echo -e "${GREEN}3.${RESET} Xóa cache AUR"
+    create_box "DỌN DẸP CACHE ${ICON_CLEAN}" 63
+    echo ""
+
+    menu_item "1" "Xóa cache gói cũ (giữ 3 phiên bản gần nhất)" "${ICON_CLEAN}"
+    menu_item "2" "Xóa toàn bộ cache" "${ICON_TRASH}"
+    menu_item "3" "Xóa cache AUR" "${ICON_CLEAN}"
 
     if has_flatpak; then
-        echo -e "${GREEN}4.${RESET} Xóa cache Flatpak"
+        menu_item "4" "Xóa cache Flatpak" "${ICON_CLEAN}"
     fi
 
-    echo -e "${RED}0.${RESET} Quay lại"
     echo ""
-    echo -en "${CYAN}Chọn cách dọn dẹp:${RESET} "
+    menu_item "0" "Quay lại" "${ICON_ARROW}"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn cách dọn dẹp:${RESET} "
     read choice
 
     case $choice in
         1)
-            echo -e "${YELLOW}Đang dọn dẹp cache...${RESET}"
+            echo ""
+            info "Đang dọn dẹp cache..."
+            echo ""
             sudo paccache -r
+            echo ""
+            if [[ $? -eq 0 ]]; then
+                success "Dọn dẹp cache thành công!"
+            else
+                error "Dọn dẹp cache thất bại!"
+            fi
             pause_prompt
             ;;
         2)
-            echo -e "${RED}Cảnh báo: Xóa toàn bộ cache!${RESET}"
-            echo -en "${CYAN}Bạn có chắc chắn? (y/N):${RESET} "
+            echo ""
+            warning "Cảnh báo: Xóa toàn bộ cache!"
+            echo -en "${CYAN}${ICON_WARNING} Bạn có chắc chắn? (y/N):${RESET} "
             read confirm
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+                echo ""
+                info "Đang xóa toàn bộ cache..."
+                echo ""
                 sudo pacman -Scc
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Xóa cache thành công!"
+                else
+                    error "Xóa cache thất bại!"
+                fi
             fi
             pause_prompt
             ;;
         3)
             local aur_helper=$(detect_aur_helper)
             if [[ -n "$aur_helper" ]]; then
-                echo -e "${YELLOW}Đang dọn dẹp cache AUR...${RESET}"
+                echo ""
+                info "Đang dọn dẹp cache AUR..."
+                echo ""
                 $aur_helper -Sc
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Dọn dẹp cache AUR thành công!"
+                else
+                    error "Dọn dẹp cache AUR thất bại!"
+                fi
                 pause_prompt
             fi
             ;;
         4)
             if has_flatpak; then
-                echo -e "${YELLOW}Đang dọn dẹp cache Flatpak...${RESET}"
+                echo ""
+                info "Đang dọn dẹp cache Flatpak..."
+                echo ""
                 flatpak uninstall --unused
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Dọn dẹp cache Flatpak thành công!"
+                else
+                    error "Dọn dẹp cache Flatpak thất bại!"
+                fi
                 pause_prompt
             fi
             ;;
@@ -384,22 +773,38 @@ clean_cache() {
 # Xóa orphan packages
 remove_orphans() {
     show_header
-    echo -e "${YELLOW}═══ XÓA GÓI ORPHAN ═══${RESET}"
+    create_box "XÓA GÓI ORPHAN ${ICON_TRASH}" 63
+    echo ""
+
+    info "Đang tìm kiếm gói orphan..."
+    echo ""
 
     local orphans=$(pacman -Qdtq)
 
     if [[ -n "$orphans" ]]; then
-        echo -e "${YELLOW}Các gói orphan tìm thấy:${RESET}"
+        divider
+        echo -e "${BOLD}${YELLOW}Các gói orphan tìm thấy:${RESET}"
+        divider
         echo "$orphans"
         echo ""
-        echo -en "${CYAN}Xóa các gói này? (y/N):${RESET} "
+        divider
+        echo -en "${CYAN}${ICON_WARNING} Xóa các gói này? (y/N):${RESET} "
         read confirm
 
         if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+            echo ""
+            warning "Đang xóa gói orphan..."
+            echo ""
             sudo pacman -Rns $(pacman -Qdtq)
+            echo ""
+            if [[ $? -eq 0 ]]; then
+                success "Xóa gói orphan thành công!"
+            else
+                error "Xóa gói orphan thất bại!"
+            fi
         fi
     else
-        echo -e "${GREEN}Không tìm thấy gói orphan nào!${RESET}"
+        success "Không tìm thấy gói orphan nào! Hệ thống sạch sẽ ${ICON_SPARKLE}"
     fi
 
     pause_prompt
@@ -408,32 +813,52 @@ remove_orphans() {
 # Danh sách gói đã cài
 list_installed() {
     show_header
-    echo -e "${YELLOW}═══ DANH SÁCH GÓI ĐÃ CÀI ═══${RESET}"
-    echo -e "${GREEN}1.${RESET} Liệt kê tất cả gói"
-    echo -e "${GREEN}2.${RESET} Liệt kê gói từ AUR"
-    echo -e "${GREEN}3.${RESET} Liệt kê gói explicit (cài thủ công)"
+    create_box "DANH SÁCH GÓI ĐÃ CÀI ${ICON_CHECK}" 63
+    echo ""
+
+    menu_item "1" "Liệt kê tất cả gói" "${ICON_PACKAGE}"
+    menu_item "2" "Liệt kê gói từ AUR" "${ICON_STAR}"
+    menu_item "3" "Liệt kê gói explicit (cài thủ công)" "${ICON_CHECK}"
 
     if has_flatpak; then
-        echo -e "${GREEN}4.${RESET} Liệt kê gói Flatpak"
+        menu_item "4" "Liệt kê gói Flatpak" "${ICON_PACKAGE}"
     fi
 
-    echo -e "${RED}0.${RESET} Quay lại"
     echo ""
-    echo -en "${CYAN}Chọn loại danh sách:${RESET} "
+    menu_item "0" "Quay lại" "${ICON_ARROW}"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn loại danh sách:${RESET} "
     read choice
 
     case $choice in
         1)
+            echo ""
+            info "Đang lấy danh sách tất cả gói..."
+            echo ""
+            divider
             pacman -Q | less
             ;;
         2)
+            echo ""
+            info "Đang lấy danh sách gói từ AUR..."
+            echo ""
+            divider
             pacman -Qm | less
             ;;
         3)
+            echo ""
+            info "Đang lấy danh sách gói explicit..."
+            echo ""
+            divider
             pacman -Qe | less
             ;;
         4)
             if has_flatpak; then
+                echo ""
+                info "Đang lấy danh sách gói Flatpak..."
+                echo ""
+                divider
                 flatpak list
                 pause_prompt
             fi
@@ -447,47 +872,76 @@ list_installed() {
 # Kiểm tra gói bị hỏng
 check_broken() {
     show_header
-    echo -e "${YELLOW}═══ KIỂM TRA GÓI BỊ HỎNG ═══${RESET}"
-    echo -e "${YELLOW}Đang kiểm tra...${RESET}"
+    create_box "KIỂM TRA GÓI BỊ HỎNG ${ICON_SHIELD}" 63
     echo ""
 
-    echo -e "${CYAN}Kiểm tra database integrity:${RESET}"
+    info "Đang kiểm tra hệ thống..."
+    echo ""
+
+    divider
+    echo -e "${BOLD}${PURPLE}${ICON_SHIELD} Kiểm tra database integrity:${RESET}"
+    divider
     sudo pacman -Dk
 
     echo ""
-    echo -e "${CYAN}Kiểm tra file conflicts:${RESET}"
+    divider
+    echo -e "${BOLD}${PURPLE}${ICON_SHIELD} Kiểm tra file conflicts:${RESET}"
+    divider
     sudo pacman -Qkk 2>&1 | grep -v "0 missing files"
 
+    echo ""
+    success "Hoàn thành kiểm tra!"
     pause_prompt
 }
 
 # Downgrade gói
 downgrade_package() {
     show_header
-    echo -e "${YELLOW}═══ DOWNGRADE GÓI ═══${RESET}"
+    create_box "DOWNGRADE GÓI ⬇" 63
+    echo ""
 
     if ! command -v downgrade &> /dev/null; then
-        echo -e "${RED}Chưa cài đặt 'downgrade'!${RESET}"
-        echo -en "${CYAN}Cài đặt downgrade? (y/N):${RESET} "
+        error "Chưa cài đặt 'downgrade'!"
+        echo ""
+        echo -en "${CYAN}${ICON_WARNING} Cài đặt downgrade? (y/N):${RESET} "
         read confirm
 
         if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
             local aur_helper=$(detect_aur_helper)
             if [[ -n "$aur_helper" ]]; then
+                echo ""
+                info "Đang cài đặt downgrade..."
+                echo ""
                 $aur_helper -S downgrade
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Cài đặt downgrade thành công!"
+                else
+                    error "Cài đặt downgrade thất bại!"
+                fi
             else
-                echo -e "${RED}Cần cài AUR helper trước!${RESET}"
+                echo ""
+                error "Cần cài AUR helper trước!"
             fi
         fi
         pause_prompt
         return
     fi
 
-    echo -en "${CYAN}Nhập tên gói cần downgrade:${RESET} "
+    echo -en "${CYAN}${ICON_SEARCH} Nhập tên gói cần downgrade:${RESET} "
     read pkg
 
     if [[ -n "$pkg" ]]; then
+        echo ""
+        info "Đang downgrade ${BOLD}${pkg}${RESET}..."
+        echo ""
         sudo downgrade $pkg
+        echo ""
+        if [[ $? -eq 0 ]]; then
+            success "Downgrade ${BOLD}${pkg}${RESET} thành công!"
+        else
+            error "Downgrade ${BOLD}${pkg}${RESET} thất bại!"
+        fi
         pause_prompt
     fi
 }
@@ -495,10 +949,14 @@ downgrade_package() {
 # Xem log gói
 view_logs() {
     show_header
-    echo -e "${YELLOW}═══ LOG GÓI ═══${RESET}"
+    create_box "LOG GÓI 📋" 63
     echo ""
 
-    echo -e "${CYAN}50 dòng log gần nhất của pacman:${RESET}"
+    info "Hiển thị 50 dòng log gần nhất của pacman..."
+    echo ""
+    divider
+    echo -e "${BOLD}${PURPLE}Pacman Logs:${RESET}"
+    divider
     tail -n 50 /var/log/pacman.log
 
     pause_prompt
@@ -507,39 +965,68 @@ view_logs() {
 # Mirror management
 mirror_management() {
     show_header
-    echo -e "${YELLOW}═══ QUẢN LÝ MIRROR ═══${RESET}"
-    echo -e "${GREEN}1.${RESET} Cập nhật mirrorlist (reflector)"
-    echo -e "${GREEN}2.${RESET} Sao lưu mirrorlist hiện tại"
-    echo -e "${GREEN}3.${RESET} Xem mirrorlist hiện tại"
-    echo -e "${RED}0.${RESET} Quay lại"
+    create_box "QUẢN LÝ MIRROR 🌐" 63
     echo ""
-    echo -en "${CYAN}Chọn chức năng:${RESET} "
+
+    menu_item "1" "Cập nhật mirrorlist (reflector)" "🔄"
+    menu_item "2" "Sao lưu mirrorlist hiện tại" "💾"
+    menu_item "3" "Xem mirrorlist hiện tại" "👁"
+
+    echo ""
+    menu_item "0" "Quay lại" "${ICON_ARROW}"
+    echo ""
+    divider
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn chức năng:${RESET} "
     read choice
 
     case $choice in
         1)
             if ! command -v reflector &> /dev/null; then
-                echo -e "${RED}Chưa cài đặt 'reflector'!${RESET}"
-                echo -en "${CYAN}Cài đặt reflector? (y/N):${RESET} "
+                echo ""
+                error "Chưa cài đặt 'reflector'!"
+                echo -en "${CYAN}${ICON_WARNING} Cài đặt reflector? (y/N):${RESET} "
                 read confirm
 
                 if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+                    echo ""
+                    info "Đang cài đặt reflector..."
+                    echo ""
                     sudo pacman -S reflector
+                    echo ""
+                    if [[ $? -eq 0 ]]; then
+                        success "Cài đặt reflector thành công!"
+                    else
+                        error "Cài đặt reflector thất bại!"
+                    fi
                 fi
             else
-                echo -e "${YELLOW}Đang cập nhật mirrorlist (lấy 20 mirror nhanh nhất)...${RESET}"
+                echo ""
+                info "Đang cập nhật mirrorlist (lấy 20 mirror nhanh nhất)..."
+                echo ""
                 sudo cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
                 sudo reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-                echo -e "${GREEN}Hoàn tất!${RESET}"
+                echo ""
+                if [[ $? -eq 0 ]]; then
+                    success "Cập nhật mirrorlist thành công!"
+                else
+                    error "Cập nhật mirrorlist thất bại!"
+                fi
             fi
             pause_prompt
             ;;
         2)
+            echo ""
+            info "Đang sao lưu mirrorlist..."
             sudo cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup.$(date +%Y%m%d)
-            echo -e "${GREEN}Đã sao lưu mirrorlist!${RESET}"
+            echo ""
+            success "Đã sao lưu mirrorlist!"
             pause_prompt
             ;;
         3)
+            echo ""
+            info "Hiển thị mirrorlist hiện tại..."
+            echo ""
+            divider
             cat /etc/pacman.d/mirrorlist | less
             ;;
         0)
@@ -551,27 +1038,50 @@ mirror_management() {
 # Cài đặt YAY
 install_yay() {
     show_header
-    echo -e "${YELLOW}═══ CÀI ĐẶT YAY (AUR HELPER) ═══${RESET}"
+    create_box "CÀI ĐẶT YAY (AUR HELPER) ${ICON_SPARKLE}" 63
     echo ""
-    echo -en "${CYAN}Bạn có muốn cài đặt YAY? (y/N):${RESET} "
+
+    info "YAY là AUR helper phổ biến nhất cho Arch Linux"
+    echo ""
+    echo -en "${CYAN}${ICON_WARNING} Bạn có muốn cài đặt YAY? (y/N):${RESET} "
     read confirm
 
     if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
-        echo -e "${YELLOW}Đang cài đặt dependencies...${RESET}"
+        echo ""
+        info "Đang cài đặt dependencies..."
+        echo ""
         sudo pacman -S --needed git base-devel
 
-        echo -e "${YELLOW}Đang clone YAY...${RESET}"
+        if [[ $? -ne 0 ]]; then
+            echo ""
+            error "Cài đặt dependencies thất bại!"
+            pause_prompt
+            return
+        fi
+
+        echo ""
+        info "Đang clone YAY từ AUR..."
+        echo ""
         cd /tmp
         git clone https://aur.archlinux.org/yay.git
         cd yay
 
-        echo -e "${YELLOW}Đang build và cài đặt...${RESET}"
+        echo ""
+        info "Đang build và cài đặt YAY..."
+        echo ""
         makepkg -si
 
-        cd ~
-        rm -rf /tmp/yay
-
-        echo -e "${GREEN}Hoàn tất cài đặt YAY!${RESET}"
+        if [[ $? -eq 0 ]]; then
+            cd ~
+            rm -rf /tmp/yay
+            echo ""
+            success "Hoàn tất cài đặt YAY! ${ICON_ROCKET}"
+        else
+            cd ~
+            rm -rf /tmp/yay
+            echo ""
+            error "Cài đặt YAY thất bại!"
+        fi
     fi
 
     pause_prompt
@@ -580,7 +1090,8 @@ install_yay() {
 # Pause prompt
 pause_prompt() {
     echo ""
-    echo -en "${CYAN}Nhấn Enter để tiếp tục...${RESET}"
+    divider
+    echo -en "${DIM}Nhấn ${BOLD}Enter${RESET}${DIM} để tiếp tục...${RESET}"
     read
 }
 
@@ -592,33 +1103,37 @@ pause_prompt() {
 dev_tools_menu() {
     while true; do
         show_header
-        echo -e "${YELLOW}═══ MÔI TRƯỜNG PHÁT TRIỂN ═══${RESET}"
+        create_box "MÔI TRƯỜNG PHÁT TRIỂN ${ICON_FIRE}" 63
         echo ""
-        echo -e "${CYAN}── Web Development ──${RESET}"
-        echo -e "${GREEN}1.${RESET}  PHP Stack (PHP, Composer, Extensions)"
-        echo -e "${GREEN}2.${RESET}  Laravel (Framework)"
-        echo -e "${GREEN}3.${RESET}  Node.js Stack (Node.js, npm, yarn, pnpm)"
+
+        section_header "Web Development" "🌐"
+        menu_item "1" "PHP Stack (PHP, Composer, Extensions)" "🐘"
+        menu_item "2" "Laravel (Framework)" "${ICON_SPARKLE}"
+        menu_item "3" "Node.js Stack (Node.js, npm, yarn, pnpm)" "🟢"
+
+        section_header "Databases" "🗄"
+        menu_item "4" "PostgreSQL" "🐘"
+        menu_item "5" "MySQL/MariaDB" "🐬"
+        menu_item "6" "MongoDB" "🍃"
+        menu_item "7" "Redis" "🔴"
+
+        section_header "Programming Languages" "💻"
+        menu_item "8" "Java (JDK)" "☕"
+        menu_item "9" "Python Stack (pip, virtualenv, poetry)" "🐍"
+        menu_item "10" "Go" "🐹"
+        menu_item "11" "Rust" "🦀"
+
+        section_header "Tools & Others" "${ICON_TOOLS}"
+        menu_item "12" "Docker & Docker Compose" "🐳"
+        menu_item "13" "Git & Git Tools" "📚"
+        menu_item "14" "Kiểm tra các công cụ đã cài" "${ICON_CHECK}"
+
         echo ""
-        echo -e "${CYAN}── Databases ──${RESET}"
-        echo -e "${GREEN}4.${RESET}  PostgreSQL"
-        echo -e "${GREEN}5.${RESET}  MySQL/MariaDB"
-        echo -e "${GREEN}6.${RESET}  MongoDB"
-        echo -e "${GREEN}7.${RESET}  Redis"
+        divider
+        menu_item "0" "Quay lại menu chính" "${ICON_ARROW}"
+        divider
         echo ""
-        echo -e "${CYAN}── Programming Languages ──${RESET}"
-        echo -e "${GREEN}8.${RESET}  Java (JDK)"
-        echo -e "${GREEN}9.${RESET}  Python Stack (pip, virtualenv, poetry)"
-        echo -e "${GREEN}10.${RESET} Go"
-        echo -e "${GREEN}11.${RESET} Rust"
-        echo ""
-        echo -e "${CYAN}── Tools & Others ──${RESET}"
-        echo -e "${GREEN}12.${RESET} Docker & Docker Compose"
-        echo -e "${GREEN}13.${RESET} Git & Git Tools"
-        echo -e "${GREEN}14.${RESET} Kiểm tra các công cụ đã cài"
-        echo ""
-        echo -e "${RED}0.${RESET}  Quay lại menu chính"
-        echo ""
-        echo -en "${CYAN}Chọn [0-14]:${RESET} "
+        echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn [0-14]:${RESET} "
         read choice
 
         case $choice in
@@ -638,7 +1153,7 @@ dev_tools_menu() {
             14) check_dev_tools ;;
             0) return ;;
             *)
-                echo -e "${RED}Lựa chọn không hợp lệ!${RESET}"
+                error "Lựa chọn không hợp lệ!"
                 sleep 1
                 ;;
         esac

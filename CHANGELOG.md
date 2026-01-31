@@ -90,6 +90,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic dependency checking (e.g., Composer for Laravel)
 - Interactive confirmations for optional components
 
+## [2.0.0] - 2026-01-26
+
+### 🎨 UI Overhaul - Major Visual Update
+
+**Inspired by Laravel CLI** - Complete redesign of the user interface with modern, beautiful components.
+
+#### Added - UI Components
+- **ASCII Art Header** with gradient colors (Purple → Violet → Pink)
+- **256-Color Support** with extended color palette:
+  - Gradient colors: PURPLE, PINK, ORANGE, LIME, SKY, VIOLET, GOLD
+  - Text styles: BOLD, DIM, ITALIC, UNDERLINE
+- **20+ Icons & Emojis** for visual feedback:
+  - ✓ Success, ✗ Error, ⚠ Warning, ℹ Info
+  - 🚀 Rocket, 📦 Package, 🗑 Trash, 🔍 Search
+  - ⬆ Update, 🧹 Clean, 🛡 Shield, 🔧 Tools
+  - And many more...
+- **Box Components**:
+  - Classic boxes with sharp corners (╔═══╗)
+  - Rounded boxes for status bars (╭───╮)
+  - Customizable width and title positioning
+- **Status Badges** with colored backgrounds:
+  - SUCCESS (green), ERROR (red), WARNING (yellow), INFO (blue)
+- **Section Headers** with icons and dividers
+- **Menu Items** with consistent icon placement
+- **Progress Indicators**:
+  - Spinner animation (⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+  - Progress bar with percentage ([████░░░] 67%)
+
+#### Added - UI Helper Functions
+- `success()` - Green checkmark with bold text
+- `error()` - Red X with bold text
+- `warning()` - Yellow warning with bold text
+- `info()` - Cyan info icon with bold text
+- `badge()` - Colored background labels
+- `create_box()` - Classic box with title
+- `create_rounded_box()` - Rounded corner box
+- `section_header()` - Section title with icon and divider
+- `menu_item()` - Menu entry with number, icon, and text
+- `divider()` - Horizontal separator line
+- `bold()` - Bold text wrapper
+- `dim()` - Dimmed text wrapper
+- `spinner()` - Loading animation (for background processes)
+- `progress_bar()` - Visual progress indicator
+
+#### Enhanced - User Experience
+- **Main Menu**:
+  - Status bar showing AUR Helper and Flatpak status with badges
+  - Organized sections with icons (Package, Maintenance, Advanced, Development)
+  - Clear visual hierarchy with section headers and dividers
+  - Improved prompt with arrow icon (➜)
+- **All Submenus** updated with new UI:
+  - Install Package - Clear source selection with icons
+  - Remove Package - Visual feedback for operations
+  - System Update - Progress indicators for each step
+  - Search Package - Better formatted results
+  - Package Info - Organized information display
+  - Clean Cache - Warning badges for destructive operations
+  - Remove Orphans - List display with confirmation
+  - Development Tools - Beautiful categorized menu
+
+#### Enhanced - Visual Feedback
+- Success/Error messages after all operations
+- Loading indicators for long-running tasks
+- Clear status display (installed/not installed)
+- Better error messaging with icons
+- Confirmation prompts with warning icons
+- Consistent spacing and alignment
+
+#### Technical Improvements
+- Modular UI component system
+- Reusable helper functions
+- Consistent color scheme across all menus
+- Terminal compatibility checks
+- UTF-8 and emoji support
+- Responsive box sizing
+
+### Files Modified
+- `pkgman.zsh` - Complete UI overhaul (200+ lines of new UI code)
+- `readme.md` - Added UI showcase section
+- `CHANGELOG.md` - This entry
+- 
+### Breaking Changes
+- None - All functionality remains backward compatible
+- UI changes are purely visual enhancements
+
+### Migration Notes
+- No migration needed
+- Existing installations will automatically get new UI
+- Old color variables still work but new gradient colors are recommended
+
 ## [Unreleased]
 
 ### Planned Features

@@ -1,10 +1,6 @@
 # Arch Package Manager 🚀
 
-Trình quản lý gói tập trung cho Arch Linux và các distro dựa trên Arch, sử dụng zsh với giao diện menu tương tác đầy màu sắc.
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Shell](https://img.shields.io/badge/shell-zsh-green.svg)
-![Platform](https://img.shields.io/badge/platform-Arch%20Linux-1793d1.svg)
+Trình quản lý gói tập trung cho Arch Linux và các distro dựa trên Arch, sử dụng zsh với giao diện menu tương tác hiện đại, đầy màu sắc.
 
 ## ✨ Tính năng
 
@@ -48,7 +44,6 @@ Trình quản lý gói tập trung cho Arch Linux và các distro dựa trên Ar
 ### Bắt buộc
 - **Arch Linux** hoặc distro dựa trên Arch (Manjaro, EndeavourOS, v.v.)
 - **zsh** - Z shell
-- **sudo** - Quyền root
 
 ### Tùy chọn (khuyến nghị)
 - **yay** hoặc **paru** - AUR helper (script có thể tự cài yay)
