@@ -40,3 +40,13 @@ config.local
 # Custom user scripts
 custom/
 local/
+
+# Backup files
+*.backup
+*.old
+*.bak
+
+# Temporary files
+*.tmp
+*.swp
+*~

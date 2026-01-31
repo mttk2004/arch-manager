@@ -2,6 +2,29 @@
 
 Trình quản lý gói tập trung cho Arch Linux và các distro dựa trên Arch, sử dụng zsh với giao diện menu tương tác hiện đại, đầy màu sắc.
 
+> **Version 2.1.0** - Modular Architecture
+
+## 📁 Cấu trúc dự án
+
+```
+arch-zsh-manager/
+├── bin/              # Executable entry points
+│   └── pkgman        # Main application
+├── lib/              # Modular libraries
+│   ├── core/         # Core modules (colors, UI, detection, utils)
+│   ├── package/      # Package management
+│   ├── system/       # System maintenance
+│   ├── advanced/     # Advanced features
+│   ├── font/         # Font management
+│   └── devtools/     # Development tools
+├── docs/             # Documentation
+├── scripts/          # Utility scripts
+├── config/           # Configuration (future)
+├── README.md
+├── CHANGELOG.md
+└── LICENSE
+```
+
 ## ✨ Tính năng
 
 ### 🎯 Quản lý gói từ nhiều nguồn
@@ -75,8 +98,8 @@ git clone https://github.com/mttk2004/arch-zsh-manager.git
 cd arch-zsh-manager
 
 # Chạy script cài đặt (sẽ tự động cài dependencies và setup)
-chmod +x install.sh
-./install.sh
+chmod +x scripts/install.sh
+./scripts/install.sh
 ```
 
 Script cài đặt sẽ:
@@ -84,7 +107,7 @@ Script cài đặt sẽ:
 - ✅ Cài đặt zsh nếu chưa có
 - ✅ Cài đặt các gói cần thiết (pacman-contrib, git, base-devel, reflector)
 - ✅ Hỏi cài đặt YAY (AUR helper) nếu muốn
-- ✅ Cho phép chọn cài system-wide hoặc alias
+- ✅ Cài đặt bin/pkgman vào hệ thống
 
 ### Phương pháp 2: Thủ công
 
@@ -94,16 +117,17 @@ git clone https://github.com/mttk2004/arch-zsh-manager.git
 cd arch-zsh-manager
 
 # Cấp quyền thực thi
-chmod +x pkgman.zsh
+chmod +x bin/pkgman
 
 # Chạy trực tiếp
-./pkgman.zsh
+./bin/pkgman
 
 # HOẶC cài vào hệ thống
-sudo cp pkgman.zsh /usr/local/bin/pkgman
+sudo cp -r bin /usr/local/
+sudo cp -r lib /usr/local/share/pkgman/
 
 # HOẶC thêm alias vào ~/.zshrc
-echo "alias pkgman='$PWD/pkgman.zsh'" >> ~/.zshrc
+echo "alias pkgman='$PWD/bin/pkgman'" >> ~/.zshrc
 source ~/.zshrc
 ```
 
@@ -122,7 +146,7 @@ sudo pacman -S pacman-contrib reflector base-devel git
 pkgman
 
 # Hoặc chạy trực tiếp
-./pkgman.zsh
+./bin/pkgman
 ```
 
 > **Lưu ý**: Không cần chạy với `sudo`. Script sẽ tự yêu cầu quyền root khi cần thiết.
@@ -195,6 +219,26 @@ pkgman
    - Flatpak
    - Tất cả
 
+## 🏗️ Kiến trúc module
+
+### Core Modules
+
+- **colors.zsh** - Định nghĩa màu sắc, icons, text styles
+- **ui.zsh** - UI components (boxes, badges, menus, prompts)
+- **detect.zsh** - Phát hiện hệ thống, packages, services
+- **utils.zsh** - Hàm tiện ích (validation, string, file, logging)
+
+### Feature Modules
+
+Các module chức năng được tổ chức theo category:
+- `lib/package/` - Quản lý gói
+- `lib/system/` - Bảo trì hệ thống
+- `lib/advanced/` - Tính năng nâng cao
+- `lib/font/` - Quản lý font
+- `lib/devtools/` - Công cụ phát triển
+
+Xem chi tiết: `docs/PROJECT_STRUCTURE.md`
+
 ## 🎨 Tính năng nổi bật
 
 ### 🔄 Tự động phát hiện AUR Helper
@@ -261,10 +305,10 @@ which zsh
 sudo pacman -S zsh
 
 # Kiểm tra quyền thực thi
-ls -l pkgman.zsh
+ls -l bin/pkgman
 
 # Cấp quyền nếu cần
-chmod +x pkgman.zsh
+chmod +x bin/pkgman
 ```
 
 ### Không tìm thấy AUR helper
@@ -300,9 +344,18 @@ Mọi đóng góp đều được chào đón! Hãy tạo issue hoặc pull requ
 ### Cách đóng góp
 1. Fork repository
 2. Tạo branch mới (`git checkout -b feature/AmazingFeature`)
-3. Commit thay đổi (`git commit -m 'Add some AmazingFeature'`)
-4. Push lên branch (`git push origin feature/AmazingFeature`)
-5. Tạo Pull Request
+3. Tạo module mới trong `lib/` (xem `lib/README.md`)
+4. Test kỹ lưỡng
+5. Commit thay đổi (`git commit -m 'feat: add some amazing feature'`)
+6. Push lên branch (`git push origin feature/AmazingFeature`)
+7. Tạo Pull Request
+
+### Tạo module mới
+
+Xem hướng dẫn chi tiết trong:
+- `lib/README.md` - Module structure
+- `docs/REFACTORING_PLAN.md` - Development plan
+- `docs/PROJECT_STRUCTURE.md` - Project organization
 
 ## 📄 License
 
@@ -339,6 +392,18 @@ Bạn sẽ thấy menu đầy màu sắc:
 - 🔵 **Text xanh dương** - Nhập liệu
 
 **Tất cả thao tác chỉ cần nhập số, không cần gõ lệnh dài!**
+
+---
+
+## 🔄 Migration Notes
+
+Dự án đã được refactor sang kiến trúc modular. Xem chi tiết:
+- `docs/REFACTORING_SUMMARY.md` - Tổng kết refactoring
+- `docs/REFACTORING_PLAN.md` - Kế hoạch chi tiết
+- `MIGRATION_NOTES.md` - Hướng dẫn migration
+
+**Old**: `./pkgman.zsh` (deprecated)  
+**New**: `./bin/pkgman` ✅
 
 ---
 
