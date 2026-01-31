@@ -1,0 +1,194 @@
+#!/usr/bin/env zsh
+
+# =============================================================================
+# Arch Package Manager - Main Entry Point
+# Version: 2.1.0
+# =============================================================================
+
+# Get script directory
+SCRIPT_DIR="${0:A:h}"
+LIB_DIR="${SCRIPT_DIR}/../lib"
+
+# =============================================================================
+# Load Core Modules
+# =============================================================================
+
+# Load colors and icons
+source "${LIB_DIR}/core/colors.zsh"
+
+# Load UI components
+source "${LIB_DIR}/core/ui.zsh"
+
+# Load system detection
+source "${LIB_DIR}/core/detect.zsh"
+
+# Load utilities
+source "${LIB_DIR}/core/utils.zsh"
+
+# =============================================================================
+# Load Feature Modules
+# =============================================================================
+
+# Check if module file exists before sourcing
+load_module() {
+    local module=$1
+    local module_file="${LIB_DIR}/${module}"
+
+    if [[ -f "$module_file" ]]; then
+        source "$module_file"
+    else
+        echo "Warning: Module not found: $module_file" >&2
+    fi
+}
+
+# Load all package management modules
+load_module "package/install.zsh"
+load_module "package/remove.zsh"
+load_module "package/update.zsh"
+load_module "package/search.zsh"
+load_module "package/info.zsh"
+
+# Load system maintenance modules
+load_module "system/cache.zsh"
+load_module "system/orphan.zsh"
+load_module "system/broken.zsh"
+load_module "system/list.zsh"
+
+# Load advanced feature modules
+load_module "advanced/downgrade.zsh"
+load_module "advanced/logs.zsh"
+load_module "advanced/mirror.zsh"
+load_module "advanced/yay.zsh"
+
+# Load font management modules
+load_module "font/menu.zsh"
+load_module "font/install.zsh"
+load_module "font/manage.zsh"
+load_module "font/test.zsh"
+
+# Load development tools modules
+load_module "devtools/menu.zsh"
+load_module "devtools/web.zsh"
+load_module "devtools/database.zsh"
+load_module "devtools/language.zsh"
+load_module "devtools/devops.zsh"
+
+# =============================================================================
+# Main Menu
+# =============================================================================
+
+show_main_menu() {
+    local aur_helper=$(detect_aur_helper)
+    local flatpak_status=""
+
+    if has_flatpak; then
+        flatpak_status="$(badge "INSTALLED" "success")"
+    else
+        flatpak_status="$(badge "NOT INSTALLED" "error")"
+    fi
+
+    # System status bar
+    echo -e "${SKY}${RBOX_TL}$(printf "${RBOX_H}%.0s" $(seq 1 63))${RBOX_TR}${RESET}"
+    if [[ -n "$aur_helper" ]]; then
+        echo -e "${SKY}${RBOX_V}${RESET} ${ICON_SHIELD} AUR Helper: $(badge "$aur_helper" "success")  ${ICON_PACKAGE} Flatpak: ${flatpak_status} ${SKY}${RBOX_V}${RESET}"
+    else
+        echo -e "${SKY}${RBOX_V}${RESET} ${ICON_WARNING} AUR Helper: $(badge "NOT INSTALLED" "warning")  ${ICON_PACKAGE} Flatpak: ${flatpak_status} ${SKY}${RBOX_V}${RESET}"
+    fi
+    echo -e "${SKY}${RBOX_BL}$(printf "${RBOX_H}%.0s" $(seq 1 63))${RBOX_BR}${RESET}"
+
+    # Package Management Section
+    section_header "HỆ THỐNG GÓI" "${ICON_PACKAGE}"
+    menu_item "1" "Cài đặt gói" "${ICON_DOWNLOAD}"
+    menu_item "2" "Xóa gói" "${ICON_TRASH}"
+    menu_item "3" "Cập nhật hệ thống" "${ICON_UPDATE}"
+    menu_item "4" "Tìm kiếm gói" "${ICON_SEARCH}"
+    menu_item "5" "Xem thông tin gói" "${ICON_INFO}"
+
+    # System Maintenance Section
+    section_header "BẢO TRÌ HỆ THỐNG" "${ICON_CLEAN}"
+    menu_item "6" "Dọn dẹp cache" "${ICON_CLEAN}"
+    menu_item "7" "Xóa gói orphan (không cần thiết)" "${ICON_TRASH}"
+    menu_item "8" "Xem danh sách gói đã cài" "${ICON_CHECK}"
+    menu_item "9" "Kiểm tra gói bị hỏng" "${ICON_SHIELD}"
+
+    # Advanced Section
+    section_header "NÂNG CAO" "${ICON_TOOLS}"
+    menu_item "10" "Downgrade gói" "⬇"
+    menu_item "11" "Xem log gói" "📋"
+    menu_item "12" "Mirror management" "🌐"
+
+    # Font Management Section
+    section_header "FONT CHỮ" "🔤"
+    menu_item "13" "Quản lý font chữ (Nerd Fonts, Emoji, CJK...)" "🔤"
+
+    # Development Tools Section
+    section_header "PHÁT TRIỂN" "${ICON_FIRE}"
+    menu_item "14" "Môi trường phát triển (PHP, Node.js, Java, Database...)" "${ICON_TOOLS}"
+
+    # Install AUR Helper if not present
+    if [[ -z "$aur_helper" ]]; then
+        echo ""
+        menu_item "15" "${YELLOW}Cài đặt YAY (AUR helper)${RESET}" "${ICON_SPARKLE}"
+    fi
+
+    # Exit option
+    echo ""
+    divider
+    echo -e "  ${BOLD}${RED}0.${RESET}  ${ICON_ERROR}  Thoát"
+    divider
+    echo ""
+    echo -en "${BOLD}${PURPLE}${ICON_ARROW}${RESET} ${CYAN}Chọn chức năng [0-15]:${RESET} "
+}
+
+# =============================================================================
+# Main Loop
+# =============================================================================
+
+main() {
+    # Check if running on Arch Linux
+    if ! is_arch_linux; then
+        error "This script is designed for Arch Linux and Arch-based distributions only!"
+        exit 1
+    fi
+
+    while true; do
+        show_header
+        show_main_menu
+        read choice
+
+        case $choice in
+            1) install_package ;;
+            2) remove_package ;;
+            3) update_system ;;
+            4) search_package ;;
+            5) package_info ;;
+            6) clean_cache ;;
+            7) remove_orphans ;;
+            8) list_installed ;;
+            9) check_broken ;;
+            10) downgrade_package ;;
+            11) view_logs ;;
+            12) mirror_management ;;
+            13) font_manager_menu ;;
+            14) dev_tools_menu ;;
+            15) install_yay ;;
+            0)
+                clear
+                echo ""
+                success "Tạm biệt! Cảm ơn bạn đã sử dụng Arch Package Manager! ${ICON_ROCKET}"
+                echo ""
+                exit 0
+                ;;
+            *)
+                error "Lựa chọn không hợp lệ! Vui lòng chọn từ 0-15."
+                sleep 2
+                ;;
+        esac
+    done
+}
+
+# =============================================================================
+# Run Application
+# =============================================================================
+
+main
