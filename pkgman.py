@@ -68,6 +68,9 @@ _package_cache = {
     "installed": None,
 }
 
+# Debug mode flag
+DEBUG_MODE = False
+
 
 # =============================================================================
 # Sudo Authentication
@@ -243,11 +246,13 @@ def install(
         if len(packages) > 1:
             # Multi-package installation with progress bar
             from ui.components import install_packages_with_progress
-            success, failed = install_packages_with_progress(packages, backend, as_deps=as_deps)
+            success, failed = install_packages_with_progress(packages, backend, as_deps=as_deps, debug=DEBUG_MODE)
 
             console.print()
             if success:
                 display_success(f"Successfully installed {len(success)} package(s)")
+                if DEBUG_MODE:
+                    console.print(f"[dim]Installed: {', '.join(success)}[/dim]")
             if failed:
                 display_error(f"Failed to install {len(failed)} package(s): {', '.join(failed)}")
         else:
@@ -292,11 +297,13 @@ def remove(
         if len(packages) > 1:
             # Multi-package removal with progress bar
             from ui.components import remove_packages_with_progress
-            success, failed = remove_packages_with_progress(packages, backend, recursive=recursive)
+            success, failed = remove_packages_with_progress(packages, backend, recursive=recursive, debug=DEBUG_MODE)
 
             console.print()
             if success:
                 display_success(f"Successfully removed {len(success)} package(s)")
+                if DEBUG_MODE:
+                    console.print(f"[dim]Removed: {', '.join(success)}[/dim]")
             if failed:
                 display_error(f"Failed to remove {len(failed)} package(s): {', '.join(failed)}")
         else:

@@ -916,7 +916,8 @@ def display_package_progress(
 def install_packages_with_progress(
     packages: List[str],
     backend,
-    as_deps: bool = False
+    as_deps: bool = False,
+    debug: bool = False
 ) -> tuple[List[str], List[str]]:
     """
     Install packages one by one with progress tracking
@@ -925,6 +926,7 @@ def install_packages_with_progress(
         packages: List of package names to install
         backend: BackendCaller instance
         as_deps: Install as dependencies
+        debug: Enable debug output
 
     Returns:
         Tuple of (successful_packages, failed_packages)
@@ -973,14 +975,31 @@ def install_packages_with_progress(
 
             try:
                 # Install single package
+                if debug:
+                    console.print(f"[dim]DEBUG: Installing {pkg}...[/dim]")
                 response = backend.install_packages([pkg], no_confirm=True, as_deps=as_deps)
 
                 if response.is_success():
-                    success.append(pkg)
-                    console.print(f"  ✅ [green]{pkg}[/green] - Installed")
+                    # Double-check if package was actually installed
+                    import subprocess
+                    check = subprocess.run(
+                        ["pacman", "-Q", pkg],
+                        capture_output=True,
+                        timeout=5
+                    )
+
+                    if check.returncode == 0:
+                        # Package truly installed
+                        success.append(pkg)
+                        console.print(f"  ✅ [green]{pkg}[/green] - Installed")
+                    else:
+                        # Backend said success but package not installed
+                        failed.append(pkg)
+                        console.print(f"  ⚠️  [yellow]{pkg}[/yellow] - Installation reported success but package not found")
                 else:
                     failed.append(pkg)
-                    console.print(f"  ❌ [red]{pkg}[/red] - Failed")
+                    error_msg = response.message if hasattr(response, 'message') else "Unknown error"
+                    console.print(f"  ❌ [red]{pkg}[/red] - Failed: {error_msg}")
             except Exception as e:
                 failed.append(pkg)
                 console.print(f"  ❌ [red]{pkg}[/red] - Error: {str(e)}")
@@ -994,7 +1013,8 @@ def install_packages_with_progress(
 def remove_packages_with_progress(
     packages: List[str],
     backend,
-    recursive: bool = False
+    recursive: bool = False,
+    debug: bool = False
 ) -> tuple[List[str], List[str]]:
     """
     Remove packages one by one with progress tracking
@@ -1003,6 +1023,7 @@ def remove_packages_with_progress(
         packages: List of package names to remove
         backend: BackendCaller instance
         recursive: Remove dependencies
+        debug: Enable debug output
 
     Returns:
         Tuple of (successful_packages, failed_packages)
@@ -1051,14 +1072,31 @@ def remove_packages_with_progress(
 
             try:
                 # Remove single package
+                if debug:
+                    console.print(f"[dim]DEBUG: Removing {pkg}...[/dim]")
                 response = backend.remove_packages([pkg], no_confirm=True, recursive=recursive)
 
                 if response.is_success():
-                    success.append(pkg)
-                    console.print(f"  ✅ [green]{pkg}[/green] - Removed")
+                    # Double-check if package was actually removed
+                    import subprocess
+                    check = subprocess.run(
+                        ["pacman", "-Q", pkg],
+                        capture_output=True,
+                        timeout=5
+                    )
+
+                    if check.returncode != 0:
+                        # Package truly removed
+                        success.append(pkg)
+                        console.print(f"  ✅ [green]{pkg}[/green] - Removed")
+                    else:
+                        # Backend said success but package still installed
+                        failed.append(pkg)
+                        console.print(f"  ⚠️  [yellow]{pkg}[/yellow] - Removal reported success but package still installed")
                 else:
                     failed.append(pkg)
-                    console.print(f"  ❌ [red]{pkg}[/red] - Failed")
+                    error_msg = response.message if hasattr(response, 'message') else "Unknown error"
+                    console.print(f"  ❌ [red]{pkg}[/red] - Failed: {error_msg}")
             except Exception as e:
                 failed.append(pkg)
                 console.print(f"  ❌ [red]{pkg}[/red] - Error: {str(e)}")

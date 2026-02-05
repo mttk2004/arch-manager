@@ -47,6 +47,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Moved operation headers after confirmation to prevent UI conflicts
   - Added pre-authentication to eliminate mid-operation password prompts
   - Added 300s timeout to prevent infinite hangs
+- **Package Verification**: Double-check actual installation/removal status
+  - Verify packages are truly installed/removed after backend reports success
+  - Display warning if backend reports success but verification fails
+  - Show detailed error messages from backend on failure
+  - Prevent false positives in operation reporting
 
 ## [1.0.0] - 2026-01-20
 
