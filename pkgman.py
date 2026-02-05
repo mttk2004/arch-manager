@@ -458,8 +458,7 @@ def run_interactive_menu() -> None:
         console.print("[bold cyan]Use arrow keys to navigate, Enter to select:[/bold cyan]\n")
         choice = prompt_select(
             "Select an action:",
-            menu_items,
-            default="0"
+            menu_items
         )
 
         try:
@@ -512,8 +511,7 @@ def run_interactive_menu() -> None:
 
                     method = prompt_select(
                         "Choose input method:",
-                        [("multi", "Multi-select from popular packages"), ("auto", "Autocomplete search")],
-                        default="multi"
+                        [("multi", "Multi-select from popular packages"), ("auto", "Autocomplete search")]
                     )
 
                     if method == "multi" and popular_choices:
@@ -562,8 +560,7 @@ def run_interactive_menu() -> None:
 
                     method = prompt_select(
                         "Choose input method:",
-                        [("multi", "Multi-select packages"), ("auto", "Autocomplete search")],
-                        default="multi"
+                        [("multi", "Multi-select packages"), ("auto", "Autocomplete search")]
                     )
 
                     if method == "multi":
