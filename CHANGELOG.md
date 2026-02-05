@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Background thread keeps sudo alive (refreshes every 60s)
   - Eliminates hanging issues caused by hidden password prompts
   - Choose preferred method on first launch
+- **Smart Dependency Removal**: Ask users if they want to remove dependencies when removing packages
+  - Explains that removing packages may leave orphaned dependencies
+  - Shows examples (e.g., vlc has 30+ dependencies like vlc-cli, libvlc, etc.)
+  - Recommends removing with dependencies for clean removal
+  - Allows keeping dependencies if user prefers
+  - Prevents incomplete removals that leave system cluttered
 - **Better Loading States**: Replace static text with animated spinners
   - Loading package lists now shows spinner animation
   - Installing/removing packages shows progress feedback

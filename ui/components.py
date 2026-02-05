@@ -717,8 +717,9 @@ def display_installation_summary(
     packages: List[str],
     package_info: Optional[dict[str, dict[str, str]]] = None,
     operation: str = "install",
-    fetch_info: bool = True
-) -> bool:
+    fetch_info: bool = True,
+    ask_recursive: bool = False
+) -> tuple[bool, bool]:
     """
     Display summary before installing/removing packages
 
@@ -727,12 +728,13 @@ def display_installation_summary(
         package_info: Optional dict with package details (size, description, etc.)
         operation: Type of operation ("install" or "remove")
         fetch_info: Whether to fetch package info from backend (default: True)
+        ask_recursive: Ask if user wants to remove dependencies (for remove operation)
 
     Returns:
-        True if user confirms, False otherwise
+        Tuple of (confirmed, remove_deps) - confirmed if user proceeds, remove_deps if should remove dependencies
     """
     if not packages:
-        return False
+        return (False, False)
 
     # Fetch package info from backend if not provided
     if package_info is None and fetch_info:
@@ -823,9 +825,25 @@ def display_installation_summary(
     ))
     console.print()
 
+    # Ask about dependencies for remove operation
+    remove_deps = False
+    if ask_recursive and operation == "remove":
+        console.print("[yellow]⚠️  Important:[/yellow] Removing these packages may leave dependencies orphaned.")
+        console.print()
+        console.print("Examples: [dim]vlc[/dim] has 30+ dependencies like [dim]vlc-cli, vlc-gui-qt, libvlc,[/dim] etc.")
+        console.print()
+        console.print("[bold]Options:[/bold]")
+        console.print("  • [cyan]Remove with dependencies[/cyan] - Clean removal (recommended)")
+        console.print("  • [cyan]Remove only packages[/cyan] - Keep dependencies (may leave orphans)")
+        console.print()
+        remove_deps = prompt_confirm("Remove dependencies too?", default=True)
+        console.print()
+
     # Confirmation
     action = "installation" if operation == "install" else "removal"
-    return prompt_confirm(f"Proceed with {action}?", default=True)
+    confirmed = prompt_confirm(f"Proceed with {action}?", default=True)
+
+    return (confirmed, remove_deps)
 
 
 def display_package_progress(
@@ -1103,6 +1121,13 @@ def remove_packages_with_progress(
 
             # Update progress
             progress.update(task, completed=idx)
+
+    # After removal, suggest cleaning orphans
+    if success and not recursive:
+        console.print()
+        console.print("[yellow]Tip:[/yellow] You may have orphaned packages left behind.")
+        console.print("Run 'Remove orphans' from main menu to clean them up.")
+        console.print()
 
     return success, failed
 

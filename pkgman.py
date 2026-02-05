@@ -232,7 +232,8 @@ def install(
         if not no_confirm:
             from ui.components import display_installation_summary
 
-            if not display_installation_summary(packages, operation="install"):
+            confirmed, _ = display_installation_summary(packages, operation="install")
+            if not confirmed:
                 display_warning("Installation cancelled")
                 return
 
@@ -283,9 +284,14 @@ def remove(
         if not no_confirm:
             from ui.components import display_installation_summary
 
-            if not display_installation_summary(packages, operation="remove"):
+            confirmed, remove_deps = display_installation_summary(packages, operation="remove", ask_recursive=True)
+            if not confirmed:
                 display_warning("Removal cancelled")
                 return
+
+            # Update recursive flag based on user choice
+            if remove_deps:
+                recursive = True
 
         # Print header after confirmation
         console.print(create_header("🗑️  Package Removal", "Removing packages..."))
