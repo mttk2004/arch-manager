@@ -24,7 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Elapsed time display
   - Sequential processing with live updates
   - Works for both install and remove operations
-  - Falls back to simple spinner for single packages
+  - Falls back to simple execution for single packages
+- **Sudo Pre-authentication**: Authenticate once at startup, no more repeated password prompts
+  - Two authentication methods: Terminal sudo or Polkit (GUI prompt)
+  - Password cached for entire session via sudo timestamp
+  - Background thread keeps sudo alive (refreshes every 60s)
+  - Eliminates hanging issues caused by hidden password prompts
+  - Choose preferred method on first launch
 - **Better Loading States**: Replace static text with animated spinners
   - Loading package lists now shows spinner animation
   - Installing/removing packages shows progress feedback
@@ -36,6 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Main menu no longer pre-selects any option (was defaulting to "Exit")
   - Install/Remove method selection menus no longer pre-select "Multi-select" option
   - Users must consciously navigate and select options, reducing mistakes
+- **Sudo Password Hanging**: Fixed operations hanging due to hidden password prompts
+  - Removed console.status() spinner that was hiding sudo prompts
+  - Moved operation headers after confirmation to prevent UI conflicts
+  - Added pre-authentication to eliminate mid-operation password prompts
+  - Added 300s timeout to prevent infinite hangs
 
 ## [1.0.0] - 2026-01-20
 

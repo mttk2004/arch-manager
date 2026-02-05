@@ -70,6 +70,87 @@ _package_cache = {
 
 
 # =============================================================================
+# Sudo Authentication
+# =============================================================================
+
+
+def authenticate_sudo(use_polkit: bool = False) -> bool:
+    """
+    Pre-authenticate sudo access for the session
+
+    This prompts for password once at startup and caches it for the session,
+    avoiding multiple password prompts during operations.
+
+    Args:
+        use_polkit: Use polkit/pkexec instead of sudo (GUI password prompt)
+
+    Returns:
+        True if authenticated successfully, False otherwise
+    """
+    import subprocess
+    import shutil
+
+    try:
+        if use_polkit:
+            # Check if pkexec is available
+            if not shutil.which("pkexec"):
+                display_warning("pkexec not found, falling back to sudo")
+                use_polkit = False
+            else:
+                # Test pkexec with a simple command
+                result = subprocess.run(
+                    ["pkexec", "--user", "root", "true"],
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+
+                if result.returncode == 0:
+                    display_success("Polkit authentication successful (using GUI prompt)")
+                    return True
+                else:
+                    display_error("Polkit authentication failed, falling back to sudo")
+                    use_polkit = False
+
+        # Standard sudo authentication
+        # Test sudo access with a simple command
+        # This will prompt for password if needed and cache it
+        result = subprocess.run(
+            ["sudo", "-v"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode == 0:
+            display_success("Sudo authentication successful")
+            # Keep sudo alive in background
+            # Run 'sudo -v' every 60 seconds to refresh timestamp
+            import threading
+            import time
+
+            def keep_sudo_alive():
+                while True:
+                    time.sleep(60)
+                    subprocess.run(["sudo", "-v"], capture_output=True)
+
+            daemon = threading.Thread(target=keep_sudo_alive, daemon=True)
+            daemon.start()
+
+            return True
+        else:
+            display_error("Sudo authentication failed")
+            return False
+
+    except subprocess.TimeoutExpired:
+        display_error("Sudo authentication timed out")
+        return False
+    except Exception as e:
+        display_error(f"Sudo authentication error: {e}")
+        return False
+
+
+# =============================================================================
 # Helper Functions
 # =============================================================================
 
@@ -170,9 +251,9 @@ def install(
             if failed:
                 display_error(f"Failed to install {len(failed)} package(s): {', '.join(failed)}")
         else:
-            # Single package - use simple spinner
-            with console.status("[cyan]Installing packages...", spinner="dots"):
-                response = backend.install_packages(packages, no_confirm=True, as_deps=as_deps)
+            # Single package - simple execution (sudo already authenticated)
+            display_info("Installing package...")
+            response = backend.install_packages(packages, no_confirm=True, as_deps=as_deps, timeout=300)
             display_operation_result(response.to_dict())
 
     except BackendError as e:
@@ -219,9 +300,9 @@ def remove(
             if failed:
                 display_error(f"Failed to remove {len(failed)} package(s): {', '.join(failed)}")
         else:
-            # Single package - use simple spinner
-            with console.status("[cyan]Removing packages...", spinner="dots"):
-                response = backend.remove_packages(packages, no_confirm=True, recursive=recursive)
+            # Single package - simple execution (sudo already authenticated)
+            display_info("Removing package...")
+            response = backend.remove_packages(packages, no_confirm=True, recursive=recursive, timeout=300)
             display_operation_result(response.to_dict())
 
     except BackendError as e:
@@ -449,6 +530,36 @@ def menu() -> None:
 
 def run_interactive_menu() -> None:
     """Run the interactive main menu"""
+    # Pre-authenticate sudo once at startup
+    clear_screen()
+    console.print(create_header(
+        "🚀 Arch Zsh Manager",
+        "Initializing..."
+    ))
+    console.print()
+    display_info("This manager requires sudo access for package operations.")
+    console.print()
+
+    # Ask user for authentication method
+    from ui.components import prompt_select
+    auth_method = prompt_select(
+        "Choose authentication method:",
+        [
+            ("sudo", "Terminal sudo (enter password in terminal)"),
+            ("polkit", "Polkit/pkexec (GUI password prompt)"),
+        ]
+    )
+
+    console.print()
+    use_polkit = (auth_method == "polkit")
+
+    if not authenticate_sudo(use_polkit=use_polkit):
+        display_error("Cannot proceed without sudo access. Exiting...")
+        return
+
+    console.print()
+    input("Press Enter to continue to main menu...")
+
     while True:
         clear_screen()
 
