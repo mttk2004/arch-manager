@@ -465,8 +465,9 @@ def run_interactive_menu() -> None:
         try:
             if choice == "1":
                 # Install packages with multi-select
-                console.print("\n[cyan]Loading available packages...[/cyan]")
+                console.print("\n[cyan]Loading package lists...[/cyan]")
                 available = get_available_packages()
+                installed = get_installed_packages()
 
                 if not available:
                     display_warning("Could not load package list. Use manual input.")
@@ -475,12 +476,38 @@ def run_interactive_menu() -> None:
                 else:
                     # Show popular/suggested packages for quick selection
                     popular_choices = []
-                    suggested = ["neovim", "git", "tmux", "docker", "vim", "htop", "btop", "firefox", "chromium", "vlc"]
-                    for pkg in suggested:
-                        if pkg in available:
-                            popular_choices.append((pkg, f"{pkg} - Popular package"))
+                    suggested = [
+                        ("neovim", "Hyperextensible Vim-based text editor"),
+                        ("git", "Distributed version control system"),
+                        ("tmux", "Terminal multiplexer"),
+                        ("docker", "Container platform"),
+                        ("vim", "Vi IMproved text editor"),
+                        ("htop", "Interactive process viewer"),
+                        ("btop", "Resource monitor (modern)"),
+                        ("firefox", "Mozilla web browser"),
+                        ("chromium", "Google Chromium browser"),
+                        ("vlc", "VLC media player"),
+                        ("wget", "Network downloader"),
+                        ("curl", "URL transfer tool"),
+                        ("zsh", "Z Shell"),
+                        ("bash-completion", "Bash completion support"),
+                        ("ripgrep", "Fast search tool (rg)"),
+                        ("fzf", "Fuzzy finder"),
+                        ("fd", "Fast find alternative"),
+                        ("bat", "Cat clone with syntax highlighting"),
+                        ("exa", "Modern ls replacement"),
+                        ("lazygit", "Terminal UI for git"),
+                    ]
 
-                    console.print("\n[bold]Option 1:[/bold] Select from popular packages")
+                    for pkg_name, pkg_desc in suggested:
+                        if pkg_name in available:
+                            # Check if already installed
+                            if pkg_name in installed:
+                                popular_choices.append((pkg_name, f"✅ {pkg_name} - {pkg_desc} (installed)"))
+                            else:
+                                popular_choices.append((pkg_name, f"📦 {pkg_name} - {pkg_desc}"))
+
+                    console.print("\n[bold]Option 1:[/bold] Select from popular packages (✅ = already installed)")
                     console.print("[bold]Option 2:[/bold] Search and type package names with autocomplete\n")
 
                     method = prompt_select(
@@ -491,9 +518,22 @@ def run_interactive_menu() -> None:
 
                     if method == "multi" and popular_choices:
                         packages = prompt_checkbox(
-                            "Select packages to install:",
+                            "Select packages to install (skip already installed):",
                             popular_choices
                         )
+
+                        # Filter out already installed packages
+                        if packages:
+                            not_installed = [pkg for pkg in packages if pkg not in installed]
+                            already_installed = [pkg for pkg in packages if pkg in installed]
+
+                            if already_installed:
+                                display_info(f"Skipping already installed: {', '.join(already_installed)}")
+
+                            packages = not_installed
+
+                            if not packages:
+                                display_warning("All selected packages are already installed.")
                     else:
                         # Autocomplete input
                         packages = prompt_autocomplete_multi(

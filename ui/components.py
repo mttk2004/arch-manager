@@ -411,18 +411,18 @@ def prompt_select(
         ...     [("1", "Install packages"), ("2", "Remove packages"), ("0", "Exit")]
         ... )
     """
-    # Custom style matching Rich theme
+    # Custom style matching Rich theme with better visual feedback
     custom_style = Style([
-        ('qmark', 'fg:cyan bold'),           # Question mark
-        ('question', 'fg:cyan bold'),         # Question text
-        ('answer', 'fg:green bold'),          # Selected answer
-        ('pointer', 'fg:cyan bold'),          # Pointer (>)
-        ('highlighted', 'fg:cyan bold'),      # Highlighted option
-        ('selected', 'fg:green'),             # Selected option
-        ('separator', 'fg:blue'),             # Separator
-        ('instruction', 'fg:yellow'),         # Instructions
-        ('text', 'fg:white'),                 # Default text
-        ('disabled', 'fg:#858585 italic'),    # Disabled options
+        ('qmark', 'fg:cyan bold'),              # Question mark icon
+        ('question', 'fg:cyan bold'),            # Question text
+        ('answer', 'fg:green bold'),             # Final answer shown
+        ('pointer', 'fg:yellow bold'),           # Pointer (►) - yellow for visibility
+        ('highlighted', 'fg:white bold'),        # Current item - white/bold for clarity
+        ('selected', 'fg:cyan'),                 # Selected state
+        ('separator', 'fg:blue'),                # Separators
+        ('instruction', 'fg:cyan'),              # Instructions at bottom
+        ('text', 'fg:white'),                    # Default text
+        ('disabled', 'fg:#666666 italic'),       # Disabled items - gray
     ])
 
     # Create choices for questionary
@@ -508,18 +508,20 @@ def prompt_checkbox(
         ... )
         >>> # Returns: ["neovim", "git"] if user selected those
     """
-    # Custom style matching Rich theme
+    # Custom style matching Rich theme with better visual feedback
     custom_style = Style([
-        ('qmark', 'fg:cyan bold'),
-        ('question', 'fg:cyan bold'),
-        ('answer', 'fg:green bold'),
-        ('pointer', 'fg:cyan bold'),
-        ('highlighted', 'fg:cyan bold'),
-        ('selected', 'fg:green'),
-        ('separator', 'fg:blue'),
-        ('instruction', 'fg:yellow'),
-        ('text', 'fg:white'),
-        ('disabled', 'fg:#858585 italic'),
+        ('qmark', 'fg:cyan bold'),              # Question mark icon
+        ('question', 'fg:cyan bold'),            # Question text
+        ('answer', 'fg:green bold'),             # Final answer shown
+        ('pointer', 'fg:yellow bold'),           # Pointer (►) - yellow for visibility
+        ('highlighted', 'fg:white bold'),        # Current item - white/bold for clarity
+        ('selected', 'fg:green bold'),           # Checked items - green checkmark
+        ('separator', 'fg:blue'),                # Separators
+        ('instruction', 'fg:cyan'),              # Instructions at bottom
+        ('text', 'fg:white'),                    # Default text
+        ('disabled', 'fg:#666666 italic'),       # Disabled items - gray
+        ('checkbox', 'fg:green bold'),           # Checkbox when checked
+        ('checkbox-selected', 'fg:green bold'),  # Selected checkbox
     ])
 
     # Create checkbox choices

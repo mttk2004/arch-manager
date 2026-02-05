@@ -130,35 +130,57 @@ def demo_checkbox():
     ))
     console.print()
 
-    choices = [
-        ("neovim", "🔷 Neovim - Hyperextensible Vim-based text editor"),
-        ("tmux", "🔷 Tmux - Terminal multiplexer"),
-        ("git", "🔷 Git - Distributed version control system"),
-        ("docker", "🔷 Docker - Container platform"),
-        ("python", "🔷 Python - Programming language"),
-        ("nodejs", "🔷 Node.js - JavaScript runtime"),
-        ("firefox", "🔷 Firefox - Web browser"),
-        ("vlc", "🔷 VLC - Media player"),
-        ("htop", "🔷 htop - Interactive process viewer"),
-        ("btop", "🔷 btop - Resource monitor"),
+    # Simulate some packages already installed
+    installed = ["git", "python", "htop"]
+
+    choices = []
+    packages = [
+        ("neovim", "Neovim - Hyperextensible Vim-based text editor"),
+        ("tmux", "Terminal multiplexer"),
+        ("git", "Distributed version control system"),
+        ("docker", "Container platform"),
+        ("python", "Programming language"),
+        ("nodejs", "JavaScript runtime"),
+        ("firefox", "Web browser"),
+        ("vlc", "VLC media player"),
+        ("htop", "Interactive process viewer"),
+        ("btop", "Resource monitor"),
     ]
 
+    # Mark installed packages
+    for pkg_name, pkg_desc in packages:
+        if pkg_name in installed:
+            choices.append((pkg_name, f"✅ {pkg_name} - {pkg_desc} (installed)"))
+        else:
+            choices.append((pkg_name, f"📦 {pkg_name} - {pkg_desc}"))
+
+    console.print("[yellow]Note:[/yellow] ✅ = already installed, 📦 = not installed")
+    console.print()
     display_info("Use ↑↓ arrows to navigate")
     display_info("Press Space to select/deselect")
     display_info("Press Enter when done")
     console.print()
 
     selected = prompt_checkbox(
-        "Select packages to install:",
+        "Select packages to install (skip already installed):",
         choices,
-        default_selected=["git", "python"],  # Pre-select some items
     )
 
     console.print()
     if selected:
-        display_success(f"Selected {len(selected)} package(s):")
-        for pkg in selected:
-            console.print(f"  ✅ {pkg}")
+        # Filter out already installed
+        not_installed = [pkg for pkg in selected if pkg not in installed]
+        already_installed = [pkg for pkg in selected if pkg in installed]
+
+        if already_installed:
+            display_info(f"Skipping already installed: {', '.join(already_installed)}")
+
+        if not_installed:
+            display_success(f"Will install {len(not_installed)} package(s):")
+            for pkg in not_installed:
+                console.print(f"  📦 {pkg}")
+        else:
+            display_warning("All selected packages are already installed.")
     else:
         display_warning("No packages selected")
 
