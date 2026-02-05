@@ -18,11 +18,11 @@ list_available_packages() {
     local aur_pkgs=()
     local all_pkgs=()
 
-    # Get official packages (fast)
+    # Get official packages (fast) - suppress all output to stderr
     official_pkgs=($(pacman -Ssq 2>/dev/null))
 
-    # Get AUR packages if helper available
-    local aur_helper=$(detect_aur_helper)
+    # Get AUR packages if helper available - suppress all output to stderr
+    local aur_helper=$(detect_aur_helper 2>/dev/null)
     if [[ -n "$aur_helper" ]]; then
         aur_pkgs=($(${aur_helper} -Ssq --aur 2>/dev/null | head -1000))
     fi
@@ -42,7 +42,8 @@ list_available_packages() {
     done
     json_array+="]"
 
-    json_success "Package list retrieved" packages "$json_array"
+    local data=$(json_object "packages" "$json_array")
+    json_success "Package list retrieved" "$data"
 }
 
 list_installed_package_names() {
@@ -62,7 +63,8 @@ list_installed_package_names() {
     done
     json_array+="]"
 
-    json_success "Installed package list retrieved" packages "$json_array"
+    local data=$(json_object "packages" "$json_array")
+    json_success "Installed package list retrieved" "$data"
 }
 
 # Get script directory
