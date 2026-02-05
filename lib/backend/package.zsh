@@ -6,6 +6,65 @@
 # Communicates with Python UI via JSON protocol
 # =============================================================================
 
+# =============================================================================
+# Helper Functions for Autocomplete
+# =============================================================================
+
+list_available_packages() {
+    # Get list of all available package names for autocomplete
+    # Combines official repos and AUR (if helper available)
+
+    local official_pkgs=()
+    local aur_pkgs=()
+    local all_pkgs=()
+
+    # Get official packages (fast)
+    official_pkgs=($(pacman -Ssq 2>/dev/null))
+
+    # Get AUR packages if helper available
+    local aur_helper=$(detect_aur_helper)
+    if [[ -n "$aur_helper" ]]; then
+        aur_pkgs=($(${aur_helper} -Ssq --aur 2>/dev/null | head -1000))
+    fi
+
+    # Combine and output as JSON array
+    all_pkgs=("${official_pkgs[@]}" "${aur_pkgs[@]}")
+
+    local json_array="["
+    local first=true
+    for pkg in "${all_pkgs[@]}"; do
+        if [[ "$first" == true ]]; then
+            first=false
+        else
+            json_array+=","
+        fi
+        json_array+="\"$pkg\""
+    done
+    json_array+="]"
+
+    json_success "Package list retrieved" packages "$json_array"
+}
+
+list_installed_package_names() {
+    # Get list of installed package names for autocomplete in remove operation
+
+    local installed=($(pacman -Qq 2>/dev/null))
+
+    local json_array="["
+    local first=true
+    for pkg in "${installed[@]}"; do
+        if [[ "$first" == true ]]; then
+            first=false
+        else
+            json_array+=","
+        fi
+        json_array+="\"$pkg\""
+    done
+    json_array+="]"
+
+    json_success "Installed package list retrieved" packages "$json_array"
+}
+
 # Get script directory
 SCRIPT_DIR="${0:A:h}"
 LIB_DIR="${SCRIPT_DIR:h}"
@@ -384,10 +443,16 @@ main() {
         check_updates)
             check_updates
             ;;
+        list_available)
+            list_available_packages
+            ;;
+        list_installed_names)
+            list_installed_package_names
+            ;;
         *)
             json_error "INVALID_ACTION" \
                 "Unknown action: $action" \
-                "$(json_object "action" "$action" "suggestion" "Use: install, remove, search, info, list_installed, list_explicit, update, check_updates")"
+                "$(json_object "action" "$action" "suggestion" "Use: install, remove, search, info, list_installed, list_explicit, update, check_updates, list_available, list_installed_names")"
             exit 1
             ;;
     esac

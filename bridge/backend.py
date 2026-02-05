@@ -347,6 +347,46 @@ class BackendCaller:
             timeout=timeout,
         )
 
+    def list_available_packages(
+        self,
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        Get list of all available package names (for autocomplete)
+
+        Args:
+            timeout: Operation timeout
+
+        Returns:
+            Response with list of available packages
+        """
+        return self.call(
+            "package",
+            "list_available",
+            params={},
+            timeout=timeout or 30,
+        )
+
+    def list_installed_names(
+        self,
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        Get list of installed package names (for autocomplete in remove)
+
+        Args:
+            timeout: Operation timeout
+
+        Returns:
+            Response with list of installed package names
+        """
+        return self.call(
+            "package",
+            "list_installed_names",
+            params={},
+            timeout=timeout or 10,
+        )
+
     def search_packages(
         self,
         query: str,

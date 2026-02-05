@@ -11,9 +11,11 @@ This module provides reusable components for building beautiful terminal interfa
 
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import Any, Callable, List, Optional
 
 import questionary
+from prompt_toolkit.completion import FuzzyCompleter, WordCompleter
+from prompt_toolkit.shortcuts import prompt
 from questionary import Style
 from rich.console import Console
 from rich.panel import Panel
@@ -441,6 +443,143 @@ def prompt_select(
     ).ask()
 
     return result if result is not None else (default or "")
+
+
+def prompt_autocomplete(
+    message: str,
+    choices: List[str],
+    fuzzy: bool = True,
+    default: str = "",
+) -> str:
+    """
+    Prompt with autocomplete support for package names
+
+    Args:
+        message: Prompt message
+        choices: List of available choices for autocomplete
+        fuzzy: Use fuzzy matching (default: True)
+        default: Default value
+
+    Returns:
+        User input string with autocomplete
+
+    Example:
+        >>> packages = ["neovim", "neofetch", "neomutt", "vim", "gvim"]
+        >>> choice = prompt_autocomplete("Enter package name:", packages)
+        >>> # User types "neo" and sees: neovim, neofetch, neomutt
+    """
+    if fuzzy:
+        completer = FuzzyCompleter(WordCompleter(choices, ignore_case=True))
+    else:
+        completer = WordCompleter(choices, ignore_case=True)
+
+    result = prompt(
+        f"{message}: ",
+        completer=completer,
+        default=default,
+        complete_while_typing=True,
+    )
+
+    return result.strip() if result else default
+
+
+def prompt_checkbox(
+    message: str,
+    choices: List[tuple[str, str]],
+    default_selected: Optional[List[str]] = None,
+) -> List[str]:
+    """
+    Interactive multi-select checkbox menu
+
+    Args:
+        message: Prompt message
+        choices: List of (value, label) tuples
+        default_selected: List of values to pre-select
+
+    Returns:
+        List of selected choice values
+
+    Example:
+        >>> selected = prompt_checkbox(
+        ...     "Select packages to install:",
+        ...     [
+        ...         ("neovim", "Neovim - Hyperextensible text editor"),
+        ...         ("tmux", "Terminal multiplexer"),
+        ...         ("git", "Version control system"),
+        ...     ]
+        ... )
+        >>> # Returns: ["neovim", "git"] if user selected those
+    """
+    # Custom style matching Rich theme
+    custom_style = Style([
+        ('qmark', 'fg:cyan bold'),
+        ('question', 'fg:cyan bold'),
+        ('answer', 'fg:green bold'),
+        ('pointer', 'fg:cyan bold'),
+        ('highlighted', 'fg:cyan bold'),
+        ('selected', 'fg:green'),
+        ('separator', 'fg:blue'),
+        ('instruction', 'fg:yellow'),
+        ('text', 'fg:white'),
+        ('disabled', 'fg:#858585 italic'),
+    ])
+
+    # Create checkbox choices
+    questionary_choices = []
+    for value, label in choices:
+        checked = False
+        if default_selected and value in default_selected:
+            checked = True
+        questionary_choices.append(
+            questionary.Choice(title=label, value=value, checked=checked)
+        )
+
+    result = questionary.checkbox(
+        message,
+        choices=questionary_choices,
+        style=custom_style,
+        qmark="📦",
+        pointer="►",
+        use_shortcuts=True,
+        instruction="(Space to select, Enter to confirm)",
+    ).ask()
+
+    return result if result is not None else []
+
+
+def prompt_autocomplete_multi(
+    message: str,
+    choices: List[str],
+    separator: str = " ",
+) -> List[str]:
+    """
+    Prompt for multiple items with autocomplete (space-separated)
+
+    Args:
+        message: Prompt message
+        choices: List of available choices for autocomplete
+        separator: Separator for multiple values (default: space)
+
+    Returns:
+        List of user-entered values
+
+    Example:
+        >>> packages = ["neovim", "tmux", "git"]
+        >>> result = prompt_autocomplete_multi("Enter packages:", packages)
+        >>> # User types "neovim tmux" with autocomplete
+        >>> # Returns: ["neovim", "tmux"]
+    """
+    completer = FuzzyCompleter(WordCompleter(choices, ignore_case=True))
+
+    result = prompt(
+        f"{message} (space-separated): ",
+        completer=completer,
+        complete_while_typing=True,
+    )
+
+    if result:
+        return [item.strip() for item in result.split(separator) if item.strip()]
+    return []
 
 
 # =============================================================================

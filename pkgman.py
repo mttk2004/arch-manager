@@ -40,6 +40,9 @@ from ui.components import (
     pause,
     print_divider,
     print_header,
+    prompt_autocomplete,
+    prompt_autocomplete_multi,
+    prompt_checkbox,
     prompt_choice,
     prompt_confirm,
     prompt_select,
@@ -58,6 +61,71 @@ app = typer.Typer(
 
 # Initialize backend caller
 backend = BackendCaller()
+
+# Cache for package lists (to avoid repeated backend calls)
+_package_cache = {
+    "available": None,
+    "installed": None,
+}
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+
+def get_available_packages(force_refresh: bool = False) -> List[str]:
+    """
+    Get list of available packages for autocomplete (with caching)
+
+    Args:
+        force_refresh: Force refresh cache
+
+    Returns:
+        List of available package names
+    """
+    global _package_cache
+
+    if _package_cache["available"] is None or force_refresh:
+        try:
+            with console.status("[cyan]Loading package list...", spinner="dots"):
+                response = backend.list_available_packages(timeout=30)
+                if response.is_success() and response.data:
+                    _package_cache["available"] = response.data.get("packages", [])
+                else:
+                    _package_cache["available"] = []
+        except Exception as e:
+            display_warning(f"Could not load package list: {e}")
+            _package_cache["available"] = []
+
+    return _package_cache["available"]
+
+
+def get_installed_packages(force_refresh: bool = False) -> List[str]:
+    """
+    Get list of installed packages for autocomplete (with caching)
+
+    Args:
+        force_refresh: Force refresh cache
+
+    Returns:
+        List of installed package names
+    """
+    global _package_cache
+
+    if _package_cache["installed"] is None or force_refresh:
+        try:
+            with console.status("[cyan]Loading installed packages...", spinner="dots"):
+                response = backend.list_installed_names(timeout=10)
+                if response.is_success() and response.data:
+                    _package_cache["installed"] = response.data.get("packages", [])
+                else:
+                    _package_cache["installed"] = []
+        except Exception as e:
+            display_warning(f"Could not load installed packages: {e}")
+            _package_cache["installed"] = []
+
+    return _package_cache["installed"]
 
 
 # =============================================================================
@@ -396,17 +464,88 @@ def run_interactive_menu() -> None:
 
         try:
             if choice == "1":
-                packages_input = prompt_text("Enter package names (space-separated)")
-                packages = packages_input.split()
+                # Install packages with multi-select
+                console.print("\n[cyan]Loading available packages...[/cyan]")
+                available = get_available_packages()
+
+                if not available:
+                    display_warning("Could not load package list. Use manual input.")
+                    packages_input = prompt_text("Enter package names (space-separated)")
+                    packages = packages_input.split()
+                else:
+                    # Show popular/suggested packages for quick selection
+                    popular_choices = []
+                    suggested = ["neovim", "git", "tmux", "docker", "vim", "htop", "btop", "firefox", "chromium", "vlc"]
+                    for pkg in suggested:
+                        if pkg in available:
+                            popular_choices.append((pkg, f"{pkg} - Popular package"))
+
+                    console.print("\n[bold]Option 1:[/bold] Select from popular packages")
+                    console.print("[bold]Option 2:[/bold] Search and type package names with autocomplete\n")
+
+                    method = prompt_select(
+                        "Choose input method:",
+                        [("multi", "Multi-select from popular packages"), ("auto", "Autocomplete search")],
+                        default="multi"
+                    )
+
+                    if method == "multi" and popular_choices:
+                        packages = prompt_checkbox(
+                            "Select packages to install:",
+                            popular_choices
+                        )
+                    else:
+                        # Autocomplete input
+                        packages = prompt_autocomplete_multi(
+                            "Enter package names",
+                            available
+                        )
+
                 if packages:
                     install(packages, no_confirm=False, as_deps=False)
+                    # Clear cache after install
+                    _package_cache["installed"] = None
                     pause()
 
             elif choice == "2":
-                packages_input = prompt_text("Enter package names (space-separated)")
-                packages = packages_input.split()
+                # Remove packages with autocomplete from installed
+                console.print("\n[cyan]Loading installed packages...[/cyan]")
+                installed = get_installed_packages()
+
+                if not installed:
+                    display_warning("Could not load installed packages. Use manual input.")
+                    packages_input = prompt_text("Enter package names (space-separated)")
+                    packages = packages_input.split()
+                else:
+                    console.print("\n[bold]Option 1:[/bold] Multi-select packages to remove")
+                    console.print("[bold]Option 2:[/bold] Type package names with autocomplete\n")
+
+                    method = prompt_select(
+                        "Choose input method:",
+                        [("multi", "Multi-select packages"), ("auto", "Autocomplete search")],
+                        default="multi"
+                    )
+
+                    if method == "multi":
+                        # Show installed packages for multi-select (limit to first 50)
+                        choices = [(pkg, pkg) for pkg in installed[:50]]
+                        if len(installed) > 50:
+                            console.print(f"\n[dim]Showing first 50 of {len(installed)} packages[/dim]")
+
+                        packages = prompt_checkbox(
+                            "Select packages to remove:",
+                            choices
+                        )
+                    else:
+                        packages = prompt_autocomplete_multi(
+                            "Enter package names",
+                            installed
+                        )
+
                 if packages:
                     remove(packages, no_confirm=False, recursive=False)
+                    # Clear cache after remove
+                    _package_cache["installed"] = None
                     pause()
 
             elif choice == "3":
