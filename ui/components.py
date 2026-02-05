@@ -393,6 +393,7 @@ def prompt_select(
     message: str,
     choices: List[tuple[str, str]],
     default: Optional[str] = None,
+    use_shortcuts: bool = False,
 ) -> str:
     """
     Interactive selection menu with arrow key navigation
@@ -401,6 +402,7 @@ def prompt_select(
         message: Prompt message
         choices: List of (value, label) tuples
         default: Default value
+        use_shortcuts: Enable keyboard shortcuts (use value as shortcut key)
 
     Returns:
         Selected choice value
@@ -408,7 +410,8 @@ def prompt_select(
     Example:
         >>> choice = prompt_select(
         ...     "Select action:",
-        ...     [("1", "Install packages"), ("2", "Remove packages"), ("0", "Exit")]
+        ...     [("1", "Install packages"), ("2", "Remove packages"), ("0", "Exit")],
+        ...     use_shortcuts=True
         ... )
     """
     # Custom style matching Rich theme with better visual feedback
@@ -426,10 +429,17 @@ def prompt_select(
     ])
 
     # Create choices for questionary
-    questionary_choices = [
-        questionary.Choice(title=label, value=value)
-        for value, label in choices
-    ]
+    questionary_choices = []
+    for value, label in choices:
+        if use_shortcuts:
+            # Add shortcut hint to label
+            questionary_choices.append(
+                questionary.Choice(title=f"[{value}] {label}", value=value, shortcut_key=value)
+            )
+        else:
+            questionary_choices.append(
+                questionary.Choice(title=label, value=value)
+            )
 
     result = questionary.select(
         message,
@@ -438,6 +448,7 @@ def prompt_select(
         style=custom_style,
         qmark="🚀",
         pointer="►",
+        use_shortcuts=use_shortcuts,
     ).ask()
 
     return result if result is not None else (default or "")
@@ -700,6 +711,88 @@ def pause(message: str = "Press Enter to continue...") -> None:
     """
     console.print(f"\n{message}", style="dim")
     input()
+
+
+def display_installation_summary(
+    packages: List[str],
+    package_info: Optional[dict[str, dict[str, str]]] = None,
+    operation: str = "install"
+) -> bool:
+    """
+    Display summary before installing/removing packages
+
+    Args:
+        packages: List of package names
+        package_info: Optional dict with package details (size, description, etc.)
+        operation: Type of operation ("install" or "remove")
+
+    Returns:
+        True if user confirms, False otherwise
+    """
+    if not packages:
+        return False
+
+    # Create summary panel
+    title = "📦 Installation Summary" if operation == "install" else "🗑️  Removal Summary"
+
+    console.print()
+    console.print(Panel.fit(
+        f"[bold cyan]{title}[/bold cyan]",
+        border_style="cyan"
+    ))
+    console.print()
+
+    # Display package list
+    table = Table(show_header=True, header_style="bold cyan", border_style="dim")
+    table.add_column("Package", style="cyan", no_wrap=True)
+    table.add_column("Description", style="white")
+
+    if package_info:
+        table.add_column("Size", justify="right", style="yellow")
+
+    total_size = 0.0
+
+    for pkg in packages:
+        if package_info and pkg in package_info:
+            info = package_info[pkg]
+            desc = info.get("description", "")[:50] + "..." if len(info.get("description", "")) > 50 else info.get("description", "")
+            size_str = info.get("size", "Unknown")
+
+            # Try to parse size for total calculation
+            try:
+                if "MB" in size_str:
+                    total_size += float(size_str.replace("MB", "").strip())
+                elif "KB" in size_str:
+                    total_size += float(size_str.replace("KB", "").strip()) / 1024
+                elif "GB" in size_str:
+                    total_size += float(size_str.replace("GB", "").strip()) * 1024
+            except:
+                pass
+
+            table.add_row(pkg, desc, size_str)
+        else:
+            table.add_row(pkg, "No description available", "" if package_info else None)
+
+    console.print(table)
+    console.print()
+
+    # Display summary statistics
+    summary_text = Text()
+    summary_text.append("📊 Summary: ", style="bold cyan")
+    summary_text.append(f"{len(packages)} package(s)", style="bold white")
+
+    if total_size > 0:
+        if total_size >= 1024:
+            summary_text.append(f" • Total size: ~{total_size/1024:.1f} GB", style="yellow")
+        else:
+            summary_text.append(f" • Total size: ~{total_size:.1f} MB", style="yellow")
+
+    console.print(summary_text)
+    console.print()
+
+    # Confirmation
+    action = "installation" if operation == "install" else "removal"
+    return prompt_confirm(f"Proceed with {action}?", default=True)
 
 
 def print_json(data: dict[str, Any]) -> None:

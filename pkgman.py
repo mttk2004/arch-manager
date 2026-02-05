@@ -88,12 +88,11 @@ def get_available_packages(force_refresh: bool = False) -> List[str]:
 
     if _package_cache["available"] is None or force_refresh:
         try:
-            with console.status("[cyan]Loading package list...", spinner="dots"):
-                response = backend.list_available_packages(timeout=30)
-                if response.is_success() and response.data:
-                    _package_cache["available"] = response.data.get("packages", [])
-                else:
-                    _package_cache["available"] = []
+            response = backend.list_available_packages(timeout=30)
+            if response.is_success() and response.data:
+                _package_cache["available"] = response.data.get("packages", [])
+            else:
+                _package_cache["available"] = []
         except Exception as e:
             display_warning(f"Could not load package list: {e}")
             _package_cache["available"] = []
@@ -115,12 +114,11 @@ def get_installed_packages(force_refresh: bool = False) -> List[str]:
 
     if _package_cache["installed"] is None or force_refresh:
         try:
-            with console.status("[cyan]Loading installed packages...", spinner="dots"):
-                response = backend.list_installed_names(timeout=10)
-                if response.is_success() and response.data:
-                    _package_cache["installed"] = response.data.get("packages", [])
-                else:
-                    _package_cache["installed"] = []
+            response = backend.list_installed_names(timeout=10)
+            if response.is_success() and response.data:
+                _package_cache["installed"] = response.data.get("packages", [])
+            else:
+                _package_cache["installed"] = []
         except Exception as e:
             display_warning(f"Could not load installed packages: {e}")
             _package_cache["installed"] = []
@@ -148,23 +146,20 @@ def install(
     console.print(create_header("📦 Package Installation", "Installing packages..."))
 
     try:
-        # Show what will be installed
-        display_info(f"Preparing to install: {', '.join(packages)}")
-
-        # Confirm installation
+        # Show installation summary and get confirmation
         if not no_confirm:
-            if not prompt_confirm(f"Install {len(packages)} package(s)?", default=True):
+            from ui.components import display_installation_summary
+
+            if not display_installation_summary(packages, operation="install"):
                 display_warning("Installation cancelled")
                 return
+        else:
+            display_info(f"Preparing to install: {', '.join(packages)}")
 
-        # Create progress bar
-        progress, task = show_progress("Installing packages...", total=len(packages))
-        progress.start()
-
-        # Call backend
-        response = backend.install_packages(packages, no_confirm=True, as_deps=as_deps)
-
-        progress.stop()
+        # Create progress bar with spinner
+        with console.status("[cyan]Installing packages...", spinner="dots") as status:
+            # Call backend
+            response = backend.install_packages(packages, no_confirm=True, as_deps=as_deps)
 
         # Display results
         display_operation_result(response.to_dict())
@@ -189,19 +184,20 @@ def remove(
     console.print(create_header("🗑️  Package Removal", "Removing packages..."))
 
     try:
-        # Show what will be removed
-        display_warning(f"Preparing to remove: {', '.join(packages)}")
-
-        # Confirm removal
+        # Show removal summary and get confirmation
         if not no_confirm:
-            if not prompt_confirm(f"Remove {len(packages)} package(s)?", default=False):
-                display_info("Removal cancelled")
+            from ui.components import display_installation_summary
+
+            if not display_installation_summary(packages, operation="remove"):
+                display_warning("Removal cancelled")
                 return
+        else:
+            display_info(f"Preparing to remove: {', '.join(packages)}")
 
-        # Call backend
-        response = backend.remove_packages(packages, no_confirm=True, recursive=recursive)
+        # Remove packages with spinner
+        with console.status("[cyan]Removing packages...", spinner="dots") as status:
+            response = backend.remove_packages(packages, no_confirm=True, recursive=recursive)
 
-        # Display results
         display_operation_result(response.to_dict())
 
     except BackendError as e:
@@ -455,18 +451,20 @@ def run_interactive_menu() -> None:
         ]
 
         # Get user choice using interactive arrow-key menu
-        console.print("[bold cyan]Use arrow keys to navigate, Enter to select:[/bold cyan]\n")
+        console.print("[bold cyan]Use arrow keys (↑↓) to navigate, Enter to select, or press number (0-9):[/bold cyan]\n")
         choice = prompt_select(
             "Select an action:",
-            menu_items
+            menu_items,
+            use_shortcuts=True
         )
 
         try:
             if choice == "1":
                 # Install packages with multi-select
-                console.print("\n[cyan]Loading package lists...[/cyan]")
-                available = get_available_packages()
-                installed = get_installed_packages()
+                # Load package lists with spinner
+                with console.status("[cyan]Loading package lists...", spinner="dots"):
+                    available = get_available_packages()
+                    installed = get_installed_packages()
 
                 if not available:
                     display_warning("Could not load package list. Use manual input.")
@@ -547,8 +545,9 @@ def run_interactive_menu() -> None:
 
             elif choice == "2":
                 # Remove packages with autocomplete from installed
-                console.print("\n[cyan]Loading installed packages...[/cyan]")
-                installed = get_installed_packages()
+                # Load installed packages with spinner
+                with console.status("[cyan]Loading installed packages...", spinner="dots"):
+                    installed = get_installed_packages()
 
                 if not installed:
                     display_warning("Could not load installed packages. Use manual input.")
