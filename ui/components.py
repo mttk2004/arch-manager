@@ -438,8 +438,6 @@ def prompt_select(
         style=custom_style,
         qmark="🚀",
         pointer="►",
-        use_shortcuts=True,
-        use_arrow_keys=True,
     ).ask()
 
     return result if result is not None else (default or "")
@@ -540,7 +538,6 @@ def prompt_checkbox(
         style=custom_style,
         qmark="📦",
         pointer="►",
-        use_shortcuts=True,
         instruction="(Space to select, Enter to confirm)",
     ).ask()
 

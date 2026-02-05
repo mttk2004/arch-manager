@@ -546,6 +546,13 @@ Install:
 pip install questionary==2.0.1 prompt-toolkit==3.0.36
 ```
 
+### Known Limitations
+
+**questionary 2.0.1:**
+- `use_shortcuts` parameter not supported (removed from implementation)
+- `use_arrow_keys` parameter not supported (removed from implementation)
+- Arrow keys and Space/Enter controls work by default without these parameters
+
 ---
 
 ## 🎯 Future Enhancements
