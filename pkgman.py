@@ -143,8 +143,6 @@ def install(
     Example:
         pkgman install neovim tmux git
     """
-    console.print(create_header("📦 Package Installation", "Installing packages..."))
-
     try:
         # Show installation summary and get confirmation
         if not no_confirm:
@@ -153,7 +151,11 @@ def install(
             if not display_installation_summary(packages, operation="install"):
                 display_warning("Installation cancelled")
                 return
-        else:
+
+        # Print header after confirmation
+        console.print(create_header("📦 Package Installation", "Installing packages..."))
+
+        if no_confirm:
             display_info(f"Preparing to install: {', '.join(packages)}")
 
         # Install packages with progress tracking
@@ -190,8 +192,6 @@ def remove(
     Example:
         pkgman remove neovim
     """
-    console.print(create_header("🗑️  Package Removal", "Removing packages..."))
-
     try:
         # Show removal summary and get confirmation
         if not no_confirm:
@@ -200,7 +200,11 @@ def remove(
             if not display_installation_summary(packages, operation="remove"):
                 display_warning("Removal cancelled")
                 return
-        else:
+
+        # Print header after confirmation
+        console.print(create_header("🗑️  Package Removal", "Removing packages..."))
+
+        if no_confirm:
             display_info(f"Preparing to remove: {', '.join(packages)}")
 
         # Remove packages with progress tracking
