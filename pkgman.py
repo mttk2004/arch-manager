@@ -156,13 +156,22 @@ def install(
         else:
             display_info(f"Preparing to install: {', '.join(packages)}")
 
-        # Create progress bar with spinner
-        with console.status("[cyan]Installing packages...", spinner="dots") as status:
-            # Call backend
-            response = backend.install_packages(packages, no_confirm=True, as_deps=as_deps)
+        # Install packages with progress tracking
+        if len(packages) > 1:
+            # Multi-package installation with progress bar
+            from ui.components import install_packages_with_progress
+            success, failed = install_packages_with_progress(packages, backend, as_deps=as_deps)
 
-        # Display results
-        display_operation_result(response.to_dict())
+            console.print()
+            if success:
+                display_success(f"Successfully installed {len(success)} package(s)")
+            if failed:
+                display_error(f"Failed to install {len(failed)} package(s): {', '.join(failed)}")
+        else:
+            # Single package - use simple spinner
+            with console.status("[cyan]Installing packages...", spinner="dots"):
+                response = backend.install_packages(packages, no_confirm=True, as_deps=as_deps)
+            display_operation_result(response.to_dict())
 
     except BackendError as e:
         display_error(str(e), e.code)
@@ -194,11 +203,22 @@ def remove(
         else:
             display_info(f"Preparing to remove: {', '.join(packages)}")
 
-        # Remove packages with spinner
-        with console.status("[cyan]Removing packages...", spinner="dots") as status:
-            response = backend.remove_packages(packages, no_confirm=True, recursive=recursive)
+        # Remove packages with progress tracking
+        if len(packages) > 1:
+            # Multi-package removal with progress bar
+            from ui.components import remove_packages_with_progress
+            success, failed = remove_packages_with_progress(packages, backend, recursive=recursive)
 
-        display_operation_result(response.to_dict())
+            console.print()
+            if success:
+                display_success(f"Successfully removed {len(success)} package(s)")
+            if failed:
+                display_error(f"Failed to remove {len(failed)} package(s): {', '.join(failed)}")
+        else:
+            # Single package - use simple spinner
+            with console.status("[cyan]Removing packages...", spinner="dots"):
+                response = backend.remove_packages(packages, no_confirm=True, recursive=recursive)
+            display_operation_result(response.to_dict())
 
     except BackendError as e:
         display_error(str(e), e.code)

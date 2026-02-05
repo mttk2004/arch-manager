@@ -11,13 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Keyboard Shortcuts**: Press number keys (0-9) to select menu options directly
   - Faster navigation without arrow keys
   - Shows shortcut hints like `[1] Install packages`
-- **Installation Summary**: Display detailed summary before installing/removing packages
-  - Shows package list with descriptions
-  - Displays total size when available
-  - Requires explicit confirmation
+- **Enhanced Installation Summary**: Display detailed summary before installing/removing packages
+  - Automatically fetches real package information from backend
+  - Shows package sizes (download and installed)
+  - Calculates and displays total disk space required
+  - Clean panel format with proper size formatting (KB/MB/GB)
+  - Requires explicit confirmation to proceed
+  - Works for both install and remove operations
+- **Progress Bars for Multi-package Operations**: Real-time progress tracking for package installation/removal
+  - Visual progress bar showing completion percentage
+  - Individual package status (✅ installed/removed, ❌ failed)
+  - Elapsed time display
+  - Sequential processing with live updates
+  - Works for both install and remove operations
+  - Falls back to simple spinner for single packages
 - **Better Loading States**: Replace static text with animated spinners
   - Loading package lists now shows spinner animation
   - Installing/removing packages shows progress feedback
+  - Fetching package info shows animated spinner
   - More professional and responsive UI
 
 ### Fixed

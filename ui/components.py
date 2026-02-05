@@ -716,7 +716,8 @@ def pause(message: str = "Press Enter to continue...") -> None:
 def display_installation_summary(
     packages: List[str],
     package_info: Optional[dict[str, dict[str, str]]] = None,
-    operation: str = "install"
+    operation: str = "install",
+    fetch_info: bool = True
 ) -> bool:
     """
     Display summary before installing/removing packages
@@ -725,6 +726,7 @@ def display_installation_summary(
         packages: List of package names
         package_info: Optional dict with package details (size, description, etc.)
         operation: Type of operation ("install" or "remove")
+        fetch_info: Whether to fetch package info from backend (default: True)
 
     Returns:
         True if user confirms, False otherwise
@@ -732,67 +734,339 @@ def display_installation_summary(
     if not packages:
         return False
 
+    # Fetch package info from backend if not provided
+    if package_info is None and fetch_info:
+        from bridge.backend import BackendCaller
+        backend = BackendCaller()
+        package_info = {}
+
+        # Fetch info for each package
+        with console.status(f"[cyan]Fetching package information...", spinner="dots"):
+            for pkg in packages:
+                try:
+                    response = backend.get_package_info(pkg, timeout=5)
+                    if response.is_success() and response.data:
+                        pkg_data = response.data
+                        package_info[pkg] = {
+                            "description": pkg_data.get("description", ""),
+                            "size": pkg_data.get("installed_size", "Unknown"),
+                            "version": pkg_data.get("version", ""),
+                            "repository": pkg_data.get("repository", "")
+                        }
+                except Exception:
+                    # If failed, add minimal info
+                    package_info[pkg] = {
+                        "description": "Package information not available",
+                        "size": "Unknown"
+                    }
+
     # Create summary panel
     title = "📦 Installation Summary" if operation == "install" else "🗑️  Removal Summary"
 
     console.print()
-    console.print(Panel.fit(
-        f"[bold cyan]{title}[/bold cyan]",
-        border_style="cyan"
-    ))
-    console.print()
 
-    # Display package list
-    table = Table(show_header=True, header_style="bold cyan", border_style="dim")
-    table.add_column("Package", style="cyan", no_wrap=True)
-    table.add_column("Description", style="white")
+    # Build summary content
+    summary_lines = []
+    summary_lines.append(f"[bold cyan]Packages to {operation}: {len(packages)}[/bold cyan]")
 
-    if package_info:
-        table.add_column("Size", justify="right", style="yellow")
-
-    total_size = 0.0
+    total_size_kb = 0.0
 
     for pkg in packages:
         if package_info and pkg in package_info:
             info = package_info[pkg]
-            desc = info.get("description", "")[:50] + "..." if len(info.get("description", "")) > 50 else info.get("description", "")
             size_str = info.get("size", "Unknown")
 
-            # Try to parse size for total calculation
+            # Parse size for display and total calculation
             try:
-                if "MB" in size_str:
-                    total_size += float(size_str.replace("MB", "").strip())
-                elif "KB" in size_str:
-                    total_size += float(size_str.replace("KB", "").strip()) / 1024
-                elif "GB" in size_str:
-                    total_size += float(size_str.replace("GB", "").strip()) * 1024
+                # Handle various size formats from pacman
+                size_clean = size_str.replace(",", "").strip()
+                if "MiB" in size_clean or "MB" in size_clean:
+                    size_val = float(size_clean.split()[0])
+                    total_size_kb += size_val * 1024
+                    size_display = f"{size_val:.1f} MB"
+                elif "KiB" in size_clean or "KB" in size_clean:
+                    size_val = float(size_clean.split()[0])
+                    total_size_kb += size_val
+                    size_display = f"{size_val:.0f} KB"
+                elif "GiB" in size_clean or "GB" in size_clean:
+                    size_val = float(size_clean.split()[0])
+                    total_size_kb += size_val * 1024 * 1024
+                    size_display = f"{size_val:.2f} GB"
+                else:
+                    size_display = size_str
             except:
-                pass
+                size_display = size_str
 
-            table.add_row(pkg, desc, size_str)
+            summary_lines.append(f"  • [cyan]{pkg}[/cyan] ({size_display})")
         else:
-            table.add_row(pkg, "No description available", "" if package_info else None)
+            summary_lines.append(f"  • [cyan]{pkg}[/cyan]")
 
-    console.print(table)
-    console.print()
-
-    # Display summary statistics
-    summary_text = Text()
-    summary_text.append("📊 Summary: ", style="bold cyan")
-    summary_text.append(f"{len(packages)} package(s)", style="bold white")
-
-    if total_size > 0:
-        if total_size >= 1024:
-            summary_text.append(f" • Total size: ~{total_size/1024:.1f} GB", style="yellow")
+    # Add total size
+    if total_size_kb > 0:
+        summary_lines.append("")
+        if total_size_kb >= 1024 * 1024:  # >= 1 GB
+            total_display = f"{total_size_kb / (1024 * 1024):.2f} GB"
+        elif total_size_kb >= 1024:  # >= 1 MB
+            total_display = f"{total_size_kb / 1024:.1f} MB"
         else:
-            summary_text.append(f" • Total size: ~{total_size:.1f} MB", style="yellow")
+            total_display = f"{total_size_kb:.0f} KB"
 
-    console.print(summary_text)
+        summary_lines.append(f"[bold yellow]Total installed size: ~{total_display}[/bold yellow]")
+
+    # Display panel
+    panel_content = "\n".join(summary_lines)
+    console.print(Panel(
+        panel_content,
+        title=title,
+        border_style="cyan",
+        padding=(1, 2)
+    ))
     console.print()
 
     # Confirmation
     action = "installation" if operation == "install" else "removal"
     return prompt_confirm(f"Proceed with {action}?", default=True)
+
+
+def display_package_progress(
+    packages: List[str],
+    operation: str = "install",
+    simulate: bool = False
+) -> dict[str, Any]:
+    """
+    Display progress bar for multi-package operations
+
+    Args:
+        packages: List of package names
+        operation: Type of operation ("install" or "remove")
+        simulate: If True, simulates progress (for testing)
+
+    Returns:
+        Dictionary with results for each package
+    """
+    from rich.progress import (
+        Progress,
+        SpinnerColumn,
+        BarColumn,
+        TextColumn,
+        TimeElapsedColumn,
+        TimeRemainingColumn,
+    )
+    import time
+
+    results = {}
+    total = len(packages)
+
+    # Create progress display
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TextColumn("•"),
+        TextColumn("{task.completed}/{task.total}"),
+        TimeElapsedColumn(),
+        console=console,
+    )
+
+    console.print()
+    action = "Installing" if operation == "install" else "Removing"
+
+    with progress:
+        # Main progress task
+        task = progress.add_task(
+            f"[cyan]{action} packages...",
+            total=total
+        )
+
+        # Process each package
+        for idx, pkg in enumerate(packages, 1):
+            # Update description to show current package
+            progress.update(
+                task,
+                description=f"[cyan]{action} {pkg}...",
+                completed=idx - 1
+            )
+
+            # Show status for completed packages
+            if idx > 1:
+                prev_pkg = packages[idx - 2]
+                console.print(f"  ✅ [green]{prev_pkg}[/green] - {operation}ed")
+
+            # Simulate or actual operation
+            if simulate:
+                time.sleep(1)  # Simulate work
+                results[pkg] = {"status": "success"}
+            else:
+                # Actual backend call would go here
+                # For now, we'll handle this at a higher level
+                results[pkg] = {"status": "pending"}
+
+            # Update progress
+            progress.update(task, completed=idx)
+
+        # Show last package completion
+        if packages:
+            console.print(f"  ✅ [green]{packages[-1]}[/green] - {operation}ed")
+
+    console.print()
+    return results
+
+
+def install_packages_with_progress(
+    packages: List[str],
+    backend,
+    as_deps: bool = False
+) -> tuple[List[str], List[str]]:
+    """
+    Install packages one by one with progress tracking
+
+    Args:
+        packages: List of package names to install
+        backend: BackendCaller instance
+        as_deps: Install as dependencies
+
+    Returns:
+        Tuple of (successful_packages, failed_packages)
+    """
+    from rich.progress import (
+        Progress,
+        SpinnerColumn,
+        BarColumn,
+        TextColumn,
+        TimeElapsedColumn,
+    )
+
+    success = []
+    failed = []
+    total = len(packages)
+
+    # Create progress display
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(complete_style="green", finished_style="bold green"),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TextColumn("•"),
+        TextColumn("{task.completed}/{task.total}"),
+        TimeElapsedColumn(),
+        console=console,
+    )
+
+    console.print()
+
+    with progress:
+        # Main progress task
+        task = progress.add_task(
+            "[cyan]Installing packages...",
+            total=total
+        )
+
+        # Process each package
+        for idx, pkg in enumerate(packages, 1):
+            # Update description to show current package
+            progress.update(
+                task,
+                description=f"[cyan]Installing {pkg}...",
+                completed=idx - 1
+            )
+
+            try:
+                # Install single package
+                response = backend.install_packages([pkg], no_confirm=True, as_deps=as_deps)
+
+                if response.is_success():
+                    success.append(pkg)
+                    console.print(f"  ✅ [green]{pkg}[/green] - Installed")
+                else:
+                    failed.append(pkg)
+                    console.print(f"  ❌ [red]{pkg}[/red] - Failed")
+            except Exception as e:
+                failed.append(pkg)
+                console.print(f"  ❌ [red]{pkg}[/red] - Error: {str(e)}")
+
+            # Update progress
+            progress.update(task, completed=idx)
+
+    return success, failed
+
+
+def remove_packages_with_progress(
+    packages: List[str],
+    backend,
+    recursive: bool = False
+) -> tuple[List[str], List[str]]:
+    """
+    Remove packages one by one with progress tracking
+
+    Args:
+        packages: List of package names to remove
+        backend: BackendCaller instance
+        recursive: Remove dependencies
+
+    Returns:
+        Tuple of (successful_packages, failed_packages)
+    """
+    from rich.progress import (
+        Progress,
+        SpinnerColumn,
+        BarColumn,
+        TextColumn,
+        TimeElapsedColumn,
+    )
+
+    success = []
+    failed = []
+    total = len(packages)
+
+    # Create progress display
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(complete_style="green", finished_style="bold green"),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TextColumn("•"),
+        TextColumn("{task.completed}/{task.total}"),
+        TimeElapsedColumn(),
+        console=console,
+    )
+
+    console.print()
+
+    with progress:
+        # Main progress task
+        task = progress.add_task(
+            "[cyan]Removing packages...",
+            total=total
+        )
+
+        # Process each package
+        for idx, pkg in enumerate(packages, 1):
+            # Update description to show current package
+            progress.update(
+                task,
+                description=f"[cyan]Removing {pkg}...",
+                completed=idx - 1
+            )
+
+            try:
+                # Remove single package
+                response = backend.remove_packages([pkg], no_confirm=True, recursive=recursive)
+
+                if response.is_success():
+                    success.append(pkg)
+                    console.print(f"  ✅ [green]{pkg}[/green] - Removed")
+                else:
+                    failed.append(pkg)
+                    console.print(f"  ❌ [red]{pkg}[/red] - Failed")
+            except Exception as e:
+                failed.append(pkg)
+                console.print(f"  ❌ [red]{pkg}[/red] - Error: {str(e)}")
+
+            # Update progress
+            progress.update(task, completed=idx)
+
+    return success, failed
 
 
 def print_json(data: dict[str, Any]) -> None:

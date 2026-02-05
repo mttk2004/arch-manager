@@ -12,6 +12,8 @@ from ui.components import (
     display_installation_summary,
     display_success,
     display_warning,
+    install_packages_with_progress,
+    remove_packages_with_progress,
     show_progress,
 )
 
@@ -22,6 +24,8 @@ __all__ = [
     "display_installation_summary",
     "display_success",
     "display_warning",
+    "install_packages_with_progress",
+    "remove_packages_with_progress",
     "show_progress",
 ]
 
