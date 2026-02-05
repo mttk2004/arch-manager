@@ -16,6 +16,53 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# PyCharm
+.idea/
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
 # Backup files
 *.bak
 *.backup
@@ -40,13 +87,3 @@ config.local
 # Custom user scripts
 custom/
 local/
-
-# Backup files
-*.backup
-*.old
-*.bak
-
-# Temporary files
-*.tmp
-*.swp
-*~

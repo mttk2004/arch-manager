@@ -1,0 +1,20 @@
+# Core UI/UX Libraries
+rich==13.7.0                # Beautiful terminal formatting, tables, progress bars
+typer==0.9.0                # Modern CLI framework
+prompt-toolkit==3.0.43      # Interactive prompts and autocomplete
+
+# Data Validation & Parsing (Updated for Python 3.14 compatibility)
+pydantic==2.10.6            # Data validation using type hints (Python 3.14 compatible)
+pyyaml==6.0.1               # YAML configuration parsing
+
+# Utilities
+click==8.1.7                # CLI utilities (typer dependency)
+shellingham==1.5.4          # Shell detection
+
+# Development Dependencies (optional, install with: pip install -e ".[dev]")
+# pytest==8.3.4             # Testing framework
+# pytest-cov==6.0.0         # Test coverage
+# black==24.10.0            # Code formatting
+# ruff==0.9.1               # Fast Python linter
+# mypy==1.14.1              # Static type checking
+# pytest-mock==3.14.0       # Mocking for pytest
