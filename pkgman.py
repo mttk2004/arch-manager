@@ -42,9 +42,12 @@ from ui.components import (
     print_header,
     prompt_choice,
     prompt_confirm,
+    prompt_select,
     prompt_text,
     show_progress,
 )
+
+
 
 # Initialize Typer app
 app = typer.Typer(
@@ -369,25 +372,27 @@ def run_interactive_menu() -> None:
         console.print(header)
         console.print()
 
-        # Display menu
+        # Define menu options with icons
         menu_items = [
-            ("1", "Install packages"),
-            ("2", "Remove packages"),
-            ("3", "Search packages"),
-            ("4", "Update system"),
-            ("5", "List installed packages"),
-            ("6", "Package information"),
-            ("7", "Clean cache"),
-            ("8", "Remove orphans"),
-            ("9", "Font manager"),
-            ("0", "Exit"),
+            ("1", "📦 Install packages"),
+            ("2", "🗑️  Remove packages"),
+            ("3", "🔍 Search packages"),
+            ("4", "⬆️  Update system"),
+            ("5", "📋 List installed packages"),
+            ("6", "ℹ️  Package information"),
+            ("7", "🧹 Clean cache"),
+            ("8", "♻️  Remove orphans"),
+            ("9", "🔤 Font manager"),
+            ("0", "❌ Exit"),
         ]
 
-        menu_panel = create_menu_panel(menu_items)
-        console.print(menu_panel)
-
-        # Get user choice
-        choice = prompt_text("\nEnter your choice", default="0")
+        # Get user choice using interactive arrow-key menu
+        console.print("[bold cyan]Use arrow keys to navigate, Enter to select:[/bold cyan]\n")
+        choice = prompt_select(
+            "Select an action:",
+            menu_items,
+            default="0"
+        )
 
         try:
             if choice == "1":

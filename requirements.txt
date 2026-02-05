@@ -1,7 +1,8 @@
 # Core UI/UX Libraries
 rich==13.7.0                # Beautiful terminal formatting, tables, progress bars
 typer==0.9.0                # Modern CLI framework
-prompt-toolkit==3.0.43      # Interactive prompts and autocomplete
+prompt-toolkit==3.0.36      # Interactive prompts and autocomplete (questionary compatible)
+questionary==2.0.1          # Beautiful interactive prompts with arrow-key navigation
 
 # Data Validation & Parsing (Updated for Python 3.14 compatibility)
 pydantic==2.10.6            # Data validation using type hints (Python 3.14 compatible)

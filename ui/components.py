@@ -11,8 +11,10 @@ This module provides reusable components for building beautiful terminal interfa
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, List, Optional
 
+import questionary
+from questionary import Style
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
@@ -383,6 +385,62 @@ def prompt_choice(
         default=default,
         console=console,
     )
+
+
+def prompt_select(
+    message: str,
+    choices: List[tuple[str, str]],
+    default: Optional[str] = None,
+) -> str:
+    """
+    Interactive selection menu with arrow key navigation
+
+    Args:
+        message: Prompt message
+        choices: List of (value, label) tuples
+        default: Default value
+
+    Returns:
+        Selected choice value
+
+    Example:
+        >>> choice = prompt_select(
+        ...     "Select action:",
+        ...     [("1", "Install packages"), ("2", "Remove packages"), ("0", "Exit")]
+        ... )
+    """
+    # Custom style matching Rich theme
+    custom_style = Style([
+        ('qmark', 'fg:cyan bold'),           # Question mark
+        ('question', 'fg:cyan bold'),         # Question text
+        ('answer', 'fg:green bold'),          # Selected answer
+        ('pointer', 'fg:cyan bold'),          # Pointer (>)
+        ('highlighted', 'fg:cyan bold'),      # Highlighted option
+        ('selected', 'fg:green'),             # Selected option
+        ('separator', 'fg:blue'),             # Separator
+        ('instruction', 'fg:yellow'),         # Instructions
+        ('text', 'fg:white'),                 # Default text
+        ('disabled', 'fg:#858585 italic'),    # Disabled options
+    ])
+
+    # Create choices for questionary
+    questionary_choices = [
+        questionary.Choice(title=label, value=value)
+        for value, label in choices
+    ]
+
+    result = questionary.select(
+        message,
+        choices=questionary_choices,
+        default=default,
+        style=custom_style,
+        qmark="🚀",
+        pointer="►",
+        use_shortcuts=True,
+        use_arrow_keys=True,
+    ).ask()
+
+    return result if result is not None else (default or "")
 
 
 # =============================================================================
