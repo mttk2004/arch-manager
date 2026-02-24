@@ -378,7 +378,7 @@ def info(
     Example:
         pkgman info neovim
     """
-    console.print(create_header(f"{Icons.INFO}Package Information", f"Package: {package}"))
+    console.print(create_header(f"{Icons.INFO} Package Information", f"Package: {package}"))
 
     try:
         # Call backend
