@@ -72,19 +72,19 @@ class Icons:
     # Status icons
     SUCCESS = "✅"
     ERROR = "❌"
-    WARNING = "⚠️ "
-    INFO = "ℹ️ "
+    WARNING = "⚠️"
+    INFO = "ℹ️"
     ROCKET = "🚀"
     SPARKLES = "✨"
 
     # Package icons
     PACKAGE = "📦"
-    TRASH = "🗑️ "
+    TRASH = "🗑️"
     SEARCH = "🔍"
-    UPDATE = "⬆️ "
+    UPDATE = "⬆️"
     LIST = "📋"
     CLEAN = "🧹"
-    RECYCLE = "♻️ "
+    RECYCLE = "♻️"
     FONT = "🔤"
     EXIT = "❌"
     WRENCH = "🔧"
@@ -105,7 +105,7 @@ class Icons:
     SECTION_PKG = "📦"
     SECTION_SYS = "🔧"
     SECTION_OTHER = "📌"
-    BACK = "⬅️ "
+    BACK = "⬅️"
     WAVE = "👋"
 
 

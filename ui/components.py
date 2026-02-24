@@ -101,7 +101,7 @@ def display_warning(message: str) -> None:
     """
     panel = Panel(
         Text(message, style=Colors.WARNING),
-        title=f"{Icons.WARNING}Warning",
+        title=f"{Icons.WARNING} Warning",
         title_align="left",
         border_style=Colors.BORDER_WARNING,
         padding=(0, 1),
@@ -118,7 +118,7 @@ def display_info(message: str) -> None:
     """
     panel = Panel(
         Text(message, style=Colors.INFO),
-        title=f"{Icons.INFO}Info",
+        title=f"{Icons.INFO} Info",
         title_align="left",
         border_style=Colors.BORDER_INFO,
         padding=(0, 1),
