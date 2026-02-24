@@ -17,6 +17,7 @@ from typing import List, Optional
 import typer
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 from rich.text import Text
 
 # Add project root to Python path
@@ -30,6 +31,8 @@ from bridge.errors import BackendError, BackendTimeoutError, InvalidResponseErro
 from ui.components import (
     clear_screen,
     console,
+    create_app_header,
+    create_grouped_menu,
     create_header,
     create_menu_panel,
     create_package_table,
@@ -51,6 +54,7 @@ from ui.components import (
     prompt_text,
     show_progress,
 )
+from ui.theme import Colors, Icons, MENU_ITEMS
 
 
 
@@ -374,7 +378,7 @@ def info(
     Example:
         pkgman info neovim
     """
-    console.print(create_header("ℹ️  Package Information", f"Package: {package}"))
+    console.print(create_header(f"{Icons.INFO}Package Information", f"Package: {package}"))
 
     try:
         # Call backend
@@ -383,31 +387,34 @@ def info(
         if response.is_success() and response.data:
             data = response.data
 
-            # Create info panel
-            info_text = Text()
-            info_text.append("Name: ", style="bold cyan")
-            info_text.append(f"{data.get('name', 'N/A')}\n")
+            # Build a table for package info for cleaner layout
+            table = Table(
+                show_header=False,
+                box=None,
+                padding=(0, 2),
+                expand=True,
+            )
+            table.add_column("Field", style=Colors.LABEL, width=14, no_wrap=True)
+            table.add_column("Value", style=Colors.TEXT)
 
-            info_text.append("Version: ", style="bold green")
-            info_text.append(f"{data.get('version', 'N/A')}\n")
+            table.add_row("Name", data.get("name", "N/A"))
+            table.add_row("Version", f"[{Colors.PKG_VERSION}]{data.get('version', 'N/A')}[/{Colors.PKG_VERSION}]")
+            table.add_row("Repository", f"[{Colors.PKG_REPO}]{data.get('repository', 'N/A')}[/{Colors.PKG_REPO}]")
 
-            info_text.append("Repository: ", style="bold yellow")
-            info_text.append(f"{data.get('repository', 'N/A')}\n")
+            installed = data.get("installed") == "true"
+            status_text = f"[{Colors.PKG_INSTALLED}]Yes {Icons.SUCCESS}[/{Colors.PKG_INSTALLED}]" if installed else f"[{Colors.PKG_NOT_INSTALLED}]No {Icons.ERROR}[/{Colors.PKG_NOT_INSTALLED}]"
+            table.add_row("Installed", status_text)
 
-            info_text.append("Installed: ", style="bold magenta")
-            installed = "Yes ✅" if data.get("installed") == "true" else "No ❌"
-            info_text.append(f"{installed}\n")
+            table.add_row("Size", f"[{Colors.PKG_SIZE}]{data.get('installed_size', 'N/A')}[/{Colors.PKG_SIZE}]")
+            table.add_row("Description", data.get("description", "N/A"))
+            table.add_row("URL", f"[link={data.get('url', '')}]{data.get('url', 'N/A')}[/link]")
 
-            info_text.append("Size: ", style="bold blue")
-            info_text.append(f"{data.get('installed_size', 'N/A')}\n")
-
-            info_text.append("\nDescription: ", style="bold white")
-            info_text.append(f"{data.get('description', 'N/A')}\n")
-
-            info_text.append("URL: ", style="bold cyan")
-            info_text.append(f"{data.get('url', 'N/A')}")
-
-            panel = Panel(info_text, title=f"📦 {package}", border_style="cyan")
+            panel = Panel(
+                table,
+                title=f"{Icons.PACKAGE} {package}",
+                border_style=Colors.PRIMARY,
+                padding=(1, 1),
+            )
             console.print(panel)
 
     except BackendError as e:
@@ -642,30 +649,20 @@ def run_interactive_menu() -> None:
     while True:
         clear_screen()
 
-        # Display header
-        header = create_header(
-            "🚀 Arch Zsh Manager",
-            "Hybrid Python/Zsh Package Manager for Arch Linux",
-        )
-        console.print(header)
+        # Display ASCII art header
+        console.print(create_app_header())
+
+        # Display grouped menu
+        console.print(create_grouped_menu())
         console.print()
 
-        # Define menu options with icons
-        menu_items = [
-            ("1", "📦 Install packages"),
-            ("2", "🗑️  Remove packages"),
-            ("3", "🔍 Search packages"),
-            ("4", "⬆️  Update system"),
-            ("5", "📋 List installed packages"),
-            ("6", "ℹ️  Package information"),
-            ("7", "🧹 Clean cache"),
-            ("8", "♻️  Remove orphans"),
-            ("9", "🔤 Font manager"),
-            ("0", "❌ Exit"),
-        ]
+        # Flatten menu items for prompt_select
+        menu_items = []
+        for _category, items in MENU_ITEMS.items():
+            for key, label, _desc in items:
+                menu_items.append((key, label))
 
         # Get user choice using interactive arrow-key menu
-        console.print("[bold cyan]Use arrow keys (↑↓) to navigate, Enter to select, or press number (0-9):[/bold cyan]\n")
         choice = prompt_select(
             "Select an action:",
             menu_items,
