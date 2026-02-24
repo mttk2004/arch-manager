@@ -796,7 +796,7 @@ def display_installation_summary(
                     size_display = f"{size_val:.2f} GB"
                 else:
                     size_display = size_str
-            except:
+            except (ValueError, IndexError):
                 size_display = size_str
 
             summary_lines.append(f"  • [cyan]{pkg}[/cyan] ({size_display})")

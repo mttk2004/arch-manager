@@ -81,7 +81,7 @@ class BackendNotFoundError(BackendError):
         self.script_path = script_path
 
 
-class PermissionError(BackendError):
+class BackendPermissionError(BackendError):
     """Raised when backend operation requires elevated privileges"""
 
     def __init__(self, message: str = "Operation requires elevated privileges") -> None:
@@ -145,7 +145,7 @@ def parse_backend_error(error_data: dict[str, Any]) -> BackendError:
         "TIMEOUT": lambda: BackendTimeoutError(message),
         "INVALID_RESPONSE": lambda: InvalidResponseError(message),
         "SCRIPT_NOT_FOUND": lambda: BackendNotFoundError(details.get("path", "unknown")),
-        "PERMISSION_DENIED": lambda: PermissionError(message),
+        "PERMISSION_DENIED": lambda: BackendPermissionError(message),
         "PACKAGE_NOT_FOUND": lambda: PackageNotFoundError(details.get("package", "unknown")),
         "DEPENDENCY_CONFLICT": lambda: DependencyError(
             message, details.get("conflicting_packages")

@@ -8,6 +8,7 @@ of Zsh backend scripts and manages the JSON protocol communication.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -17,9 +18,13 @@ from bridge.errors import (
     BackendNotFoundError,
     BackendTimeoutError,
     InvalidResponseError,
+    ValidationError,
     parse_backend_error,
 )
 from bridge.protocol import ActionType, Protocol, Request, Response
+
+# Valid package name pattern for Arch Linux packages
+_VALID_PACKAGE_NAME = re.compile(r"^[a-zA-Z0-9@._+][a-zA-Z0-9@._+\-]*$")
 
 
 class BackendCaller:
@@ -96,6 +101,24 @@ class BackendCaller:
 
         return script_path
 
+    @staticmethod
+    def _validate_package_name(name: str) -> None:
+        """
+        Validate a package name to prevent injection attacks
+
+        Args:
+            name: Package name to validate
+
+        Raises:
+            ValidationError: If package name is invalid
+        """
+        if not name or not _VALID_PACKAGE_NAME.match(name):
+            raise ValidationError(
+                f"Invalid package name: {name!r}. "
+                "Package names must contain only alphanumeric characters, @, ., _, +, -",
+                field="package_name",
+            )
+
     def _build_command(
         self,
         script_path: Path,
@@ -120,8 +143,11 @@ class BackendCaller:
         if "packages" in params:
             packages = params["packages"]
             if isinstance(packages, list):
+                for pkg in packages:
+                    self._validate_package_name(str(pkg))
                 cmd.extend(packages)
             else:
+                self._validate_package_name(str(packages))
                 cmd.append(str(packages))
 
         if "query" in params:
