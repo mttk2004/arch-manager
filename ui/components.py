@@ -18,6 +18,7 @@ import questionary
 from prompt_toolkit.completion import FuzzyCompleter, WordCompleter
 from prompt_toolkit.shortcuts import prompt
 from questionary import Style
+from rich.columns import Columns
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
@@ -29,9 +30,12 @@ from rich.progress import (
     TimeElapsedColumn,
 )
 from rich.prompt import Confirm, Prompt
+from rich.rule import Rule
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
+
+from ui.theme import APP_BANNER, APP_BANNER_SMALL, Colors, Icons, MenuCategory, MENU_ITEMS
 
 # Global console instance
 console = Console()
@@ -53,13 +57,17 @@ def display_success(message: str, data: Optional[dict[str, Any]] = None) -> None
         message: Success message
         data: Optional data dictionary to display
     """
-    text = Text()
-    text.append("✅ SUCCESS: ", style="bold green")
-    text.append(message, style="green")
-    console.print(text)
+    panel = Panel(
+        Text(message, style=Colors.SUCCESS),
+        title=f"{Icons.SUCCESS} Success",
+        title_align="left",
+        border_style=Colors.BORDER_SUCCESS,
+        padding=(0, 1),
+    )
+    console.print(panel)
 
     if data:
-        console.print(data, style="dim")
+        console.print(data, style=Colors.TEXT_DIM)
 
 
 def display_error(message: str, error_code: Optional[str] = None) -> None:
@@ -70,14 +78,18 @@ def display_error(message: str, error_code: Optional[str] = None) -> None:
         message: Error message
         error_code: Optional error code
     """
-    text = Text()
-    text.append("❌ ERROR: ", style="bold red")
-    text.append(message, style="red")
-
+    text = Text(message, style=Colors.ERROR)
     if error_code:
         text.append(f" (Code: {error_code})", style="dim red")
 
-    console.print(text)
+    panel = Panel(
+        text,
+        title=f"{Icons.ERROR} Error",
+        title_align="left",
+        border_style=Colors.BORDER_ERROR,
+        padding=(0, 1),
+    )
+    console.print(panel)
 
 
 def display_warning(message: str) -> None:
@@ -87,10 +99,14 @@ def display_warning(message: str) -> None:
     Args:
         message: Warning message
     """
-    text = Text()
-    text.append("⚠️  WARNING: ", style="bold yellow")
-    text.append(message, style="yellow")
-    console.print(text)
+    panel = Panel(
+        Text(message, style=Colors.WARNING),
+        title=f"{Icons.WARNING}Warning",
+        title_align="left",
+        border_style=Colors.BORDER_WARNING,
+        padding=(0, 1),
+    )
+    console.print(panel)
 
 
 def display_info(message: str) -> None:
@@ -100,10 +116,14 @@ def display_info(message: str) -> None:
     Args:
         message: Info message
     """
-    text = Text()
-    text.append("ℹ️  INFO: ", style="bold cyan")
-    text.append(message, style="cyan")
-    console.print(text)
+    panel = Panel(
+        Text(message, style=Colors.INFO),
+        title=f"{Icons.INFO}Info",
+        title_align="left",
+        border_style=Colors.BORDER_INFO,
+        padding=(0, 1),
+    )
+    console.print(panel)
 
 
 # =============================================================================
@@ -246,7 +266,7 @@ def create_panel(
 
 def create_header(title: str, subtitle: str = "") -> Panel:
     """
-    Create application header
+    Create application header with styled banner
 
     Args:
         title: Main title
@@ -256,16 +276,50 @@ def create_header(title: str, subtitle: str = "") -> Panel:
         Rich Panel object
     """
     content = Text()
-    content.append(title, style="bold cyan")
+    content.append(title, style=Colors.PRIMARY_BOLD)
     if subtitle:
         content.append("\n")
-        content.append(subtitle, style="dim")
+        content.append(subtitle, style=Colors.TEXT_DIM)
 
     return Panel(
         content,
-        border_style="bright_blue",
+        border_style=Colors.HEADER_BORDER,
         padding=(1, 2),
     )
+
+
+def create_app_header() -> Text:
+    """
+    Create the main application ASCII art header with gradient coloring.
+
+    Returns:
+        Rich Text object with the styled ASCII art banner
+    """
+    width = console.width
+    if width < 60:
+        banner = APP_BANNER_SMALL
+    else:
+        banner = APP_BANNER
+
+    text = Text()
+    lines = banner.split("\n")
+    gradient = [
+        "bright_blue",
+        "cyan",
+        "bright_cyan",
+        "cyan",
+        "bright_blue",
+        "blue",
+        "bright_blue",
+        "cyan",
+        "bright_cyan",
+    ]
+    for i, line in enumerate(lines):
+        color = gradient[i % len(gradient)]
+        text.append(line + "\n", style=color)
+
+    text.append("    Hybrid Python/Zsh Package Manager for Arch Linux\n", style=Colors.TEXT_DIM)
+    return text
 
 
 def create_menu_panel(items: list[tuple[str, str]]) -> Panel:
@@ -281,14 +335,48 @@ def create_menu_panel(items: list[tuple[str, str]]) -> Panel:
     content = Text()
 
     for key, description in items:
-        content.append(f"  [{key}] ", style="bold cyan")
-        content.append(f"{description}\n", style="white")
+        content.append(f"  [{key}] ", style=Colors.MENU_KEY)
+        content.append(f"{description}\n", style=Colors.MENU_TEXT)
 
     return Panel(
         content,
-        title="📋 Menu",
-        border_style="cyan",
+        title=f"{Icons.LIST} Menu",
+        border_style=Colors.PRIMARY,
         padding=(1, 2),
+    )
+
+
+def create_grouped_menu() -> Panel:
+    """
+    Create a grouped menu panel with categorized items and section dividers.
+
+    Returns:
+        Rich Panel with grouped menu items
+    """
+    content = Text()
+
+    section_icons = {
+        MenuCategory.PACKAGE_MANAGEMENT: Icons.SECTION_PKG,
+        MenuCategory.SYSTEM_MAINTENANCE: Icons.SECTION_SYS,
+        MenuCategory.OTHER: Icons.SECTION_OTHER,
+    }
+
+    for idx, (category, items) in enumerate(MENU_ITEMS.items()):
+        icon = section_icons.get(category, "")
+        # Section header
+        content.append(f"\n  {icon} {category}\n", style=Colors.SECTION)
+        content.append(f"  {'─' * 40}\n", style=Colors.SECTION_DIM)
+
+        for key, label, _description in items:
+            content.append(f"    [{key}] ", style=Colors.MENU_KEY)
+            content.append(f"{label}\n", style=Colors.MENU_TEXT)
+
+    return Panel(
+        content,
+        title=f"{Icons.ROCKET} Arch Manager",
+        subtitle="[dim]↑↓ Navigate • Enter Select • 0-9 Shortcut[/dim]",
+        border_style=Colors.HEADER_BORDER,
+        padding=(0, 2),
     )
 
 
@@ -635,7 +723,7 @@ def create_dependency_tree(package: str, dependencies: dict[str, list[str]]) -> 
 # =============================================================================
 
 
-def print_divider(char: str = "─", style: str = "dim") -> None:
+def print_divider(char: str = "─", style: str = Colors.TEXT_DIM) -> None:
     """
     Print a horizontal divider
 
@@ -643,19 +731,20 @@ def print_divider(char: str = "─", style: str = "dim") -> None:
         char: Character to use for divider
         style: Rich style
     """
-    console.print(char * console.width, style=style)
+    console.print(Rule(style=style))
 
 
-def print_header(text: str, style: str = "bold cyan") -> None:
+def print_header(text: str, style: str = Colors.PRIMARY_BOLD) -> None:
     """
-    Print a styled header
+    Print a styled section header with rule
 
     Args:
         text: Header text
         style: Rich style
     """
-    console.print(f"\n{text}", style=style)
-    print_divider()
+    console.print()
+    console.print(Rule(title=text, style=style))
+    console.print()
 
 
 def clear_screen() -> None:
@@ -670,7 +759,7 @@ def clear_screen() -> None:
 
 def display_operation_result(response: dict[str, Any]) -> None:
     """
-    Display the result of a backend operation
+    Display the result of a backend operation with a styled summary panel
 
     Args:
         response: Response dictionary from backend
@@ -691,14 +780,32 @@ def display_operation_result(response: dict[str, Any]) -> None:
     else:
         display_info(message)
 
-    # Display additional data if present
+    # Display additional data in a structured way
     if data and isinstance(data, dict):
+        details = Text()
+        has_details = False
+
         if "installed" in data and data["installed"]:
-            console.print(f"\nInstalled: {', '.join(data['installed'])}", style="green")
+            has_details = True
+            details.append(f"\n  {Icons.SUCCESS} Installed: ", style=Colors.SUCCESS_BOLD)
+            details.append(", ".join(data["installed"]), style=Colors.SUCCESS)
         if "removed" in data and data["removed"]:
-            console.print(f"\nRemoved: {', '.join(data['removed'])}", style="yellow")
+            has_details = True
+            details.append(f"\n  {Icons.SUCCESS} Removed: ", style=Colors.WARNING_BOLD)
+            details.append(", ".join(data["removed"]), style=Colors.WARNING)
         if "failed" in data and data["failed"]:
-            console.print(f"\nFailed: {', '.join(data['failed'])}", style="red")
+            has_details = True
+            details.append(f"\n  {Icons.ERROR} Failed: ", style=Colors.ERROR_BOLD)
+            details.append(", ".join(data["failed"]), style=Colors.ERROR)
+
+        if has_details:
+            console.print(Panel(
+                details,
+                title="Operation Details",
+                title_align="left",
+                border_style=Colors.TEXT_DIM,
+                padding=(0, 1),
+            ))
 
 
 # =============================================================================

@@ -6,6 +6,8 @@ including menus, tables, progress bars, and interactive prompts.
 """
 
 from ui.components import (
+    create_app_header,
+    create_grouped_menu,
     create_panel,
     create_table,
     display_error,
@@ -18,6 +20,8 @@ from ui.components import (
 )
 
 __all__ = [
+    "create_app_header",
+    "create_grouped_menu",
     "create_panel",
     "create_table",
     "display_error",
