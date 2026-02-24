@@ -8,7 +8,7 @@ for serialization/deserialization of messages between Python UI and Zsh backend.
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 
@@ -148,7 +148,7 @@ class Response(BaseModel):
     def validate_timestamp(cls, v: Optional[str]) -> Optional[str]:
         """Validate or generate timestamp"""
         if v is None:
-            return datetime.utcnow().isoformat() + "Z"
+            return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         return v
 
     def to_json(self) -> str:
