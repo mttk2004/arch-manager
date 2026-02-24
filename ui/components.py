@@ -11,6 +11,7 @@ This module provides reusable components for building beautiful terminal interfa
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Callable, List, Optional
 
 import questionary
@@ -34,6 +35,9 @@ from rich.tree import Tree
 
 # Global console instance
 console = Console()
+
+# Logger for this module
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -756,7 +760,8 @@ def display_installation_summary(
                             "repository": pkg_data.get("repository", "")
                         }
                 except Exception:
-                    # If failed, add minimal info
+                    # Log the error for debugging, but continue with minimal info
+                    logger.warning("Failed to fetch info for package '%s'", pkg, exc_info=True)
                     package_info[pkg] = {
                         "description": "Package information not available",
                         "size": "Unknown"

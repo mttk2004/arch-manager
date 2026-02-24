@@ -375,7 +375,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `readme.md` - Added font management documentation
 - `CHANGELOG.md` - This entry
 
-## [Unreleased]
+---
 
 ### Planned Features
 - Configuration file support for customization

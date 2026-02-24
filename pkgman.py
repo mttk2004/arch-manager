@@ -23,6 +23,8 @@ from rich.text import Text
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from bridge.logging_config import setup_logging
+
 from bridge.backend import BackendCaller
 from bridge.errors import BackendError, BackendTimeoutError, InvalidResponseError
 from ui.components import (
@@ -533,6 +535,70 @@ def clean(
         raise typer.Exit(code=1)
 
 
+def run_font_manager_menu() -> None:
+    """Run the font manager submenu"""
+    clear_screen()
+    console.print(create_header("🔤 Font Manager", "Manage fonts on your system"))
+    console.print()
+
+    font_items = [
+        ("list", "📋 List installed fonts"),
+        ("search", "🔍 Search for fonts"),
+        ("install", "📦 Install fonts (Nerd Fonts, Emoji, CJK, System)"),
+        ("cache", "🔄 Update font cache"),
+        ("back", "⬅️  Back to main menu"),
+    ]
+
+    choice = prompt_select("Select an action:", font_items)
+
+    try:
+        if choice == "list":
+            display_info("Listing installed fonts...")
+            response = backend.list_fonts()
+            display_operation_result(response.to_dict())
+
+        elif choice == "search":
+            pattern = prompt_text("Enter font search pattern")
+            if pattern:
+                display_info(f"Searching for fonts matching '{pattern}'...")
+                response = backend.search_fonts(pattern)
+                if response.is_success() and response.data:
+                    fonts = response.data.get("fonts", [])
+                    if fonts:
+                        for font in fonts:
+                            console.print(f"  • [cyan]{font}[/cyan]")
+                        display_success(f"Found {len(fonts)} font(s)")
+                    else:
+                        display_warning("No fonts found")
+                else:
+                    display_warning("No results found")
+
+        elif choice == "install":
+            font_types = [
+                ("nerd", "Nerd Fonts (FiraCode, JetBrainsMono, Hack, etc.)"),
+                ("system", "System Fonts (Noto, DejaVu, Liberation, etc.)"),
+                ("emoji", "Emoji Fonts (Noto Color Emoji, etc.)"),
+                ("cjk", "CJK Fonts (Chinese, Japanese, Korean)"),
+                ("ms", "Microsoft Fonts (Arial, Times New Roman, etc.)"),
+            ]
+            font_type = prompt_select("Select font category:", font_types)
+            if font_type:
+                display_info(f"Installing {font_type} fonts...")
+                response = backend.install_fonts(font_type)
+                display_operation_result(response.to_dict())
+
+        elif choice == "cache":
+            display_info("Updating font cache...")
+            response = backend.update_font_cache()
+            display_operation_result(response.to_dict())
+
+        elif choice == "back":
+            return
+
+    except BackendError as e:
+        display_error(str(e), e.code)
+
+
 @app.command()
 def menu() -> None:
     """
@@ -764,7 +830,7 @@ def run_interactive_menu() -> None:
                 pause()
 
             elif choice == "9":
-                display_info("Font manager - Coming soon!")
+                run_font_manager_menu()
                 pause()
 
             elif choice == "0":
@@ -788,14 +854,21 @@ def run_interactive_menu() -> None:
 def main(
     ctx: typer.Context,
     version: bool = typer.Option(False, "--version", "-v", help="Show version"),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug logging to stderr"),
 ) -> None:
     """
     Arch Zsh Manager - Hybrid Python/Zsh Package Manager
 
     Run without arguments to start interactive menu.
     """
+    global DEBUG_MODE
+
+    if debug:
+        DEBUG_MODE = True
+        setup_logging(debug=True)
+
     if version:
-        console.print("[bold cyan]Arch Zsh Manager[/bold cyan] version [green]2.0.0[/green]")
+        console.print("[bold cyan]Arch Zsh Manager[/bold cyan] version [green]2.1.0[/green]")
         console.print("[dim]Hybrid Python/Zsh Architecture[/dim]")
         raise typer.Exit()
 
