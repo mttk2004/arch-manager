@@ -23,7 +23,10 @@ from bridge.errors import (
 )
 from bridge.protocol import ActionType, Protocol, Request, Response
 
-# Valid package name pattern for Arch Linux packages
+# Valid package name pattern for Arch Linux packages:
+# - Must start with alphanumeric or @._+ (no leading hyphen)
+# - Subsequent characters may include alphanumeric, @, ., _, +, -
+# - Must be at least one character long
 _VALID_PACKAGE_NAME = re.compile(r"^[a-zA-Z0-9@._+][a-zA-Z0-9@._+\-]*$")
 
 
@@ -115,7 +118,8 @@ class BackendCaller:
         if not name or not _VALID_PACKAGE_NAME.match(name):
             raise ValidationError(
                 f"Invalid package name: {name!r}. "
-                "Package names must contain only alphanumeric characters, @, ., _, +, -",
+                "Package names must start with an alphanumeric character or @._+ "
+                "and contain only alphanumeric characters, @, ., _, +, -",
                 field="package_name",
             )
 
