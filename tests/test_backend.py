@@ -382,6 +382,58 @@ class TestConvenienceMethods:
             caller.uninstall_wine(remove_prefix=False)
             assert args_contain(mock, "wine", "uninstall")
 
+    # System maintenance extended methods
+
+    def test_update_database(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.update_database()
+            assert args_contain(mock, "system", "update_database")
+
+    def test_get_disk_usage(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.get_disk_usage()
+            assert args_contain(mock, "system", "disk_usage")
+
+    def test_optimize_database(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.optimize_database()
+            assert args_contain(mock, "system", "optimize_database")
+
+    def test_clear_old_logs(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.clear_old_logs(days=30)
+            assert args_contain(mock, "system", "clear_logs")
+
+    def test_downgrade_package(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.downgrade_package("vim")
+            assert args_contain(mock, "system", "downgrade")
+
+    def test_list_cached_versions(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.list_cached_versions("vim")
+            assert args_contain(mock, "system", "list_cached_versions")
+
+    def test_update_mirrors(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.update_mirrors(country="US", count=10)
+            assert args_contain(mock, "system", "update_mirrors")
+
+    def test_get_mirror_status(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.get_mirror_status()
+            assert args_contain(mock, "system", "mirror_status")
+
+    def test_downgrade_validates_name(self, caller):
+        """Downgrade should validate the package name."""
+        with pytest.raises(ValidationError):
+            caller.downgrade_package(";rm -rf /")
+
+    def test_list_cached_validates_name(self, caller):
+        """list_cached_versions should validate the package name."""
+        with pytest.raises(ValidationError):
+            caller.list_cached_versions("pkg$(whoami)")
+
 
 def args_contain(mock, module, action):
     """Helper: check if mock.call was invoked with the given module and action."""
