@@ -606,6 +606,127 @@ def run_font_manager_menu() -> None:
         display_error(str(e), e.code)
 
 
+def run_wine_manager_menu() -> None:
+    """Run the Wine manager submenu"""
+    clear_screen()
+    console.print(create_header(f"{Icons.WINE} Wine Manager", "Install and configure Wine for Windows applications"))
+    console.print()
+
+    wine_items = [
+        ("status", f"{Icons.INFO} Wine status"),
+        ("install", f"{Icons.PACKAGE} Install Wine"),
+        ("configure", f"{Icons.WRENCH} Configure Wine prefix"),
+        ("winetricks", f"{Icons.SPARKLES} Install winetricks component"),
+        ("uninstall", f"{Icons.TRASH} Uninstall Wine"),
+        ("back", f"{Icons.BACK} Back to main menu"),
+    ]
+
+    choice = prompt_select("Select an action:", wine_items)
+
+    try:
+        if choice == "status":
+            display_info("Checking Wine status...")
+            response = backend.get_wine_status()
+            if response.is_success() and response.data:
+                data = response.data
+
+                # Build a nice status table
+                table = Table(
+                    show_header=False,
+                    box=None,
+                    padding=(0, 2),
+                    expand=True,
+                )
+                table.add_column("Field", style=Colors.LABEL, width=20, no_wrap=True)
+                table.add_column("Value", style=Colors.TEXT)
+
+                installed = data.get("installed") == "true" or data.get("installed") is True
+                status_text = f"[{Colors.PKG_INSTALLED}]Yes {Icons.SUCCESS}[/{Colors.PKG_INSTALLED}]" if installed else f"[{Colors.PKG_NOT_INSTALLED}]No {Icons.ERROR}[/{Colors.PKG_NOT_INSTALLED}]"
+                table.add_row("Installed", status_text)
+
+                if installed:
+                    table.add_row("Variant", data.get("variant", "N/A"))
+                    table.add_row("Version", f"[{Colors.PKG_VERSION}]{data.get('version', 'N/A')}[/{Colors.PKG_VERSION}]")
+                    table.add_row("Prefix", data.get("prefix", "N/A"))
+                    prefix_exists = data.get("prefix_exists") == "true" or data.get("prefix_exists") is True
+                    table.add_row("Prefix exists", f"[green]Yes[/green]" if prefix_exists else f"[yellow]No[/yellow]")
+                    winetricks = data.get("winetricks") == "true" or data.get("winetricks") is True
+                    table.add_row("Winetricks", f"[green]Installed[/green]" if winetricks else f"[yellow]Not installed[/yellow]")
+
+                multilib = data.get("multilib_enabled") == "true" or data.get("multilib_enabled") is True
+                table.add_row("Multilib repo", f"[green]Enabled[/green]" if multilib else f"[red]Disabled[/red]")
+
+                optional_deps = data.get("optional_deps", [])
+                if optional_deps:
+                    table.add_row("Optional deps", ", ".join(optional_deps))
+
+                panel = Panel(
+                    table,
+                    title=f"{Icons.WINE} Wine Status",
+                    border_style=Colors.PRIMARY,
+                    padding=(1, 1),
+                )
+                console.print(panel)
+            else:
+                display_operation_result(response.to_dict())
+
+        elif choice == "install":
+            wine_variants = [
+                ("staging", "Wine Staging (recommended — latest features & fixes)"),
+                ("wine", "Wine Stable (official stable release)"),
+                ("ge-custom", "Wine GE Custom (AUR — optimized for gaming)"),
+            ]
+            variant = prompt_select("Select Wine variant:", wine_variants)
+            if variant:
+                display_info(f"Installing Wine ({variant})... This may take a few minutes.")
+                response = backend.install_wine(variant=variant)
+                display_operation_result(response.to_dict())
+
+        elif choice == "configure":
+            arch_choices = [
+                ("win64", "64-bit prefix (recommended)"),
+                ("win32", "32-bit prefix (for older applications)"),
+            ]
+            arch = prompt_select("Select architecture:", arch_choices)
+            if arch:
+                display_info(f"Configuring Wine prefix ({arch})...")
+                response = backend.configure_wine_prefix(arch=arch)
+                display_operation_result(response.to_dict())
+
+        elif choice == "winetricks":
+            common_components = [
+                ("vcrun2022", "Visual C++ 2015-2022 Redistributable"),
+                ("dotnet48", ".NET Framework 4.8"),
+                ("dxvk", "DXVK (Vulkan-based DirectX 9/10/11)"),
+                ("d3dx9", "DirectX 9 d3dx9 libraries"),
+                ("corefonts", "Microsoft Core Fonts"),
+                ("custom", "Enter custom component name"),
+            ]
+            component = prompt_select("Select component to install:", common_components)
+            if component:
+                if component == "custom":
+                    component = prompt_text("Enter winetricks component name")
+                if component:
+                    display_info(f"Installing winetricks component: {component}...")
+                    response = backend.install_winetricks_component(component)
+                    display_operation_result(response.to_dict())
+
+        elif choice == "uninstall":
+            if prompt_confirm("Are you sure you want to uninstall Wine?", default=False):
+                remove_prefix = prompt_confirm("Also remove Wine prefix (~/.wine)?", default=False)
+                display_info("Uninstalling Wine...")
+                response = backend.uninstall_wine(remove_prefix=remove_prefix)
+                display_operation_result(response.to_dict())
+            else:
+                display_info("Uninstall cancelled")
+
+        elif choice == "back":
+            return
+
+    except BackendError as e:
+        display_error(str(e), e.code)
+
+
 @app.command()
 def menu() -> None:
     """
@@ -828,6 +949,10 @@ def run_interactive_menu() -> None:
 
             elif choice == "9":
                 run_font_manager_menu()
+                pause()
+
+            elif choice == "w":
+                run_wine_manager_menu()
                 pause()
 
             elif choice == "0":
