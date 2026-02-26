@@ -29,6 +29,7 @@ def tmp_backend_dir(tmp_path):
     (backend_dir / "package.zsh").write_text("#!/bin/zsh\necho '{}'\n")
     (backend_dir / "system.zsh").write_text("#!/bin/zsh\necho '{}'\n")
     (backend_dir / "font.zsh").write_text("#!/bin/zsh\necho '{}'\n")
+    (backend_dir / "wine.zsh").write_text("#!/bin/zsh\necho '{}'\n")
     return backend_dir
 
 
@@ -353,6 +354,33 @@ class TestConvenienceMethods:
         with self._mock_call(caller) as mock:
             caller.search_fonts("nerd")
             assert args_contain(mock, "font", "search")
+
+    # Wine methods
+
+    def test_install_wine(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.install_wine(variant="staging")
+            assert args_contain(mock, "wine", "install")
+
+    def test_get_wine_status(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.get_wine_status()
+            assert args_contain(mock, "wine", "status")
+
+    def test_configure_wine_prefix(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.configure_wine_prefix(arch="win64")
+            assert args_contain(mock, "wine", "configure_prefix")
+
+    def test_install_winetricks_component(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.install_winetricks_component("vcrun2022")
+            assert args_contain(mock, "wine", "install_component")
+
+    def test_uninstall_wine(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.uninstall_wine(remove_prefix=False)
+            assert args_contain(mock, "wine", "uninstall")
 
 
 def args_contain(mock, module, action):

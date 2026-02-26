@@ -645,3 +645,114 @@ class BackendCaller:
             Response with update results
         """
         return self.call("font", "update_cache", timeout=timeout)
+
+    # Wine Management Methods
+
+    def install_wine(
+        self,
+        variant: str = "staging",
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        Install Wine and optional dependencies
+
+        Args:
+            variant: Wine variant (wine, staging, ge-custom)
+            timeout: Operation timeout
+
+        Returns:
+            Response with installation results
+        """
+        return self.call(
+            "wine",
+            "install",
+            params={"args": [variant]},
+            timeout=timeout or 600,
+        )
+
+    def get_wine_status(self, timeout: Optional[int] = None) -> Response:
+        """
+        Get Wine installation status and configuration
+
+        Args:
+            timeout: Operation timeout
+
+        Returns:
+            Response with Wine status information
+        """
+        return self.call("wine", "status", timeout=timeout)
+
+    def configure_wine_prefix(
+        self,
+        prefix: Optional[str] = None,
+        arch: str = "win64",
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        Configure a Wine prefix
+
+        Args:
+            prefix: Path to Wine prefix (default: ~/.wine)
+            arch: Architecture (win32 or win64)
+            timeout: Operation timeout
+
+        Returns:
+            Response with configuration results
+        """
+        args = []
+        if prefix:
+            args.append(prefix)
+        else:
+            args.append("$HOME/.wine")
+        args.append(arch)
+
+        return self.call(
+            "wine",
+            "configure_prefix",
+            params={"args": args},
+            timeout=timeout or 120,
+        )
+
+    def install_winetricks_component(
+        self,
+        component: str,
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        Install a winetricks component (e.g. vcrun2019, dotnet48, dxvk)
+
+        Args:
+            component: Winetricks component name
+            timeout: Operation timeout
+
+        Returns:
+            Response with installation results
+        """
+        return self.call(
+            "wine",
+            "install_component",
+            params={"args": [component]},
+            timeout=timeout or 300,
+        )
+
+    def uninstall_wine(
+        self,
+        remove_prefix: bool = False,
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        Uninstall Wine and optionally remove prefix
+
+        Args:
+            remove_prefix: Also remove the Wine prefix directory
+            timeout: Operation timeout
+
+        Returns:
+            Response with uninstall results
+        """
+        return self.call(
+            "wine",
+            "uninstall",
+            params={"args": ["true" if remove_prefix else "false"]},
+            timeout=timeout or 300,
+        )

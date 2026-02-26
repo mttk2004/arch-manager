@@ -69,6 +69,7 @@ class TestIcons:
         assert Icons.PACKAGE == "📦"
         assert Icons.SEARCH == "🔍"
         assert Icons.CLEAN == "🧹"
+        assert Icons.WINE == "🍷"
 
     def test_ui_icons(self):
         assert Icons.ARROW_RIGHT == "►"
@@ -276,7 +277,7 @@ class TestCreateGroupedMenu:
         panel = uc.create_grouped_menu()
         uc.console.print(panel)
         output = buf.getvalue()
-        for key in ["[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[0]"]:
+        for key in ["[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]", "[w]", "[0]"]:
             assert key in output, f"Menu should contain key {key}"
         uc.console = old_console
 
