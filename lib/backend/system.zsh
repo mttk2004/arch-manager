@@ -292,6 +292,209 @@ clear_old_logs() {
 }
 
 # =============================================================================
+# Downgrade Package
+# =============================================================================
+
+downgrade_package() {
+    local package="$1"
+
+    if [[ -z "$package" ]]; then
+        json_validation_error "package" "Package name is required"
+        return 1
+    fi
+
+    # Check if downgrade command is available
+    if command -v downgrade &>/dev/null; then
+        # Use downgrade tool (from AUR)
+        if sudo downgrade --noconfirm "$package" &>/dev/null; then
+            local new_version=$(pacman -Q "$package" 2>/dev/null | awk '{print $2}')
+            local data=$(json_object \
+                "package" "$package" \
+                "new_version" "$new_version" \
+                "method" "downgrade")
+            json_success "Package $package downgraded to $new_version" "$data"
+        else
+            json_system_error "Failed to downgrade $package" "downgrade $package"
+            return 1
+        fi
+    else
+        # Fallback: use cached packages in /var/cache/pacman/pkg
+        local cache_dir="/var/cache/pacman/pkg"
+        local -a cached_versions=()
+
+        while IFS= read -r file; do
+            if [[ -n "$file" ]]; then
+                local basename=$(basename "$file")
+                cached_versions+=("$basename")
+            fi
+        done < <(find "$cache_dir" -name "${package}-[0-9]*" -type f 2>/dev/null | sort -V -r)
+
+        if [[ ${#cached_versions[@]} -eq 0 ]]; then
+            json_error "NO_CACHED_VERSIONS" \
+                "No cached versions found for $package" \
+                "$(json_object "package" "$package" "suggestion" "Install 'downgrade' from AUR for more options")"
+            return 1
+        fi
+
+        # Install the second-newest version (first is current)
+        if [[ ${#cached_versions[@]} -lt 2 ]]; then
+            json_error "SINGLE_VERSION" \
+                "Only one cached version found for $package" \
+                "$(json_object "package" "$package" "suggestion" "Install 'downgrade' from AUR for more options")"
+            return 1
+        fi
+
+        local target_file="${cache_dir}/${cached_versions[2]}"
+        if sudo pacman -U --noconfirm "$target_file" &>/dev/null; then
+            local new_version=$(pacman -Q "$package" 2>/dev/null | awk '{print $2}')
+            local data=$(json_object \
+                "package" "$package" \
+                "new_version" "$new_version" \
+                "method" "cache")
+            json_success "Package $package downgraded to $new_version" "$data"
+        else
+            json_system_error "Failed to install cached version of $package" "pacman -U $target_file"
+            return 1
+        fi
+    fi
+}
+
+# =============================================================================
+# List Cached Versions
+# =============================================================================
+
+list_cached_versions() {
+    local package="$1"
+
+    if [[ -z "$package" ]]; then
+        json_validation_error "package" "Package name is required"
+        return 1
+    fi
+
+    local cache_dir="/var/cache/pacman/pkg"
+    local -a versions=()
+    local current_version=$(pacman -Q "$package" 2>/dev/null | awk '{print $2}')
+
+    while IFS= read -r file; do
+        if [[ -n "$file" ]]; then
+            local basename=$(basename "$file")
+            # Extract version from filename: package-version-arch.pkg.tar.*
+            local ver=$(echo "$basename" | sed "s/^${package}-//" | sed 's/-[^-]*\.pkg\.tar\..*//')
+            versions+=("$ver")
+        fi
+    done < <(find "$cache_dir" -name "${package}-[0-9]*" -type f 2>/dev/null | sort -V -r)
+
+    local data=$(json_object \
+        "package" "$package" \
+        "current_version" "$current_version" \
+        "cached_versions" "$(json_array "${versions[@]}")" \
+        "count" "${#versions[@]}")
+
+    json_success "Found ${#versions[@]} cached version(s) of $package" "$data"
+}
+
+# =============================================================================
+# Mirror Management
+# =============================================================================
+
+update_mirrors() {
+    local country="${1:-}"
+    local count="${2:-10}"
+
+    # Check if reflector is available
+    if ! command -v reflector &>/dev/null; then
+        json_command_not_found "reflector (install reflector package)"
+        return 1
+    fi
+
+    # Validate count
+    if ! [[ "$count" =~ ^[0-9]+$ ]]; then
+        json_validation_error "count" "Must be a positive number"
+        return 1
+    fi
+
+    # Backup current mirrorlist
+    sudo cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak 2>/dev/null
+
+    # Build reflector command
+    local -a cmd=(reflector --sort rate --save /etc/pacman.d/mirrorlist -n "$count" --protocol https)
+
+    if [[ -n "$country" ]]; then
+        cmd+=(--country "$country")
+    fi
+
+    if sudo "${cmd[@]}" &>/dev/null; then
+        # Read top mirrors from new list
+        local -a top_mirrors=()
+        while IFS= read -r line; do
+            if [[ "$line" =~ ^Server ]]; then
+                local url=$(echo "$line" | awk '{print $3}')
+                top_mirrors+=("$url")
+            fi
+        done < /etc/pacman.d/mirrorlist
+
+        local data=$(json_object \
+            "mirrors_count" "${#top_mirrors[@]}" \
+            "country" "$country" \
+            "protocol" "https" \
+            "sort_by" "rate" \
+            "backup" "/etc/pacman.d/mirrorlist.bak" \
+            "top_mirrors" "$(json_array "${top_mirrors[@]:0:5}")")
+
+        json_success "Updated mirror list with ${#top_mirrors[@]} mirrors" "$data"
+    else
+        # Restore backup on failure
+        sudo cp /etc/pacman.d/mirrorlist.bak /etc/pacman.d/mirrorlist 2>/dev/null
+        json_system_error "Failed to update mirrors" "reflector"
+        return 1
+    fi
+}
+
+mirror_status() {
+    local mirrorlist="/etc/pacman.d/mirrorlist"
+    local has_backup="false"
+    local mirror_count=0
+    local -a mirrors=()
+
+    if [[ -f "${mirrorlist}.bak" ]]; then
+        has_backup="true"
+    fi
+
+    # Count active mirrors
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^Server ]]; then
+            local url=$(echo "$line" | awk '{print $3}')
+            mirrors+=("$url")
+            ((mirror_count++))
+        fi
+    done < "$mirrorlist" 2>/dev/null
+
+    # Check mirrorlist age
+    local age_days="unknown"
+    if [[ -f "$mirrorlist" ]]; then
+        local modified=$(stat -c %Y "$mirrorlist" 2>/dev/null)
+        if [[ -n "$modified" ]]; then
+            local now=$(date +%s)
+            age_days=$(( (now - modified) / 86400 ))
+        fi
+    fi
+
+    local reflector_installed="false"
+    if command -v reflector &>/dev/null; then
+        reflector_installed="true"
+    fi
+
+    local data=$(json_object \
+        "mirror_count" "$mirror_count" \
+        "age_days" "$age_days" \
+        "has_backup" "$has_backup" \
+        "reflector_installed" "$reflector_installed" \
+        "top_mirrors" "$(json_array "${mirrors[@]:0:5}")")
+
+    json_success "Mirror status retrieved" "$data"
+}
+
+# =============================================================================
 # Main Entry Point
 # =============================================================================
 
@@ -321,10 +524,22 @@ main() {
         clear_logs)
             clear_old_logs "$@"
             ;;
+        downgrade)
+            downgrade_package "$@"
+            ;;
+        list_cached_versions)
+            list_cached_versions "$@"
+            ;;
+        update_mirrors)
+            update_mirrors "$@"
+            ;;
+        mirror_status)
+            mirror_status
+            ;;
         *)
             json_error "INVALID_ACTION" \
                 "Unknown action: $action" \
-                "$(json_object "action" "$action" "suggestion" "Use: clean_cache, remove_orphans, check_broken, update_database, disk_usage, optimize_database, clear_logs")"
+                "$(json_object "action" "$action" "suggestion" "Use: clean_cache, remove_orphans, check_broken, update_database, disk_usage, optimize_database, clear_logs, downgrade, list_cached_versions, update_mirrors, mirror_status")"
             exit 1
             ;;
     esac

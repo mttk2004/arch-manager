@@ -89,6 +89,9 @@ class Icons:
     WINE = "🍷"
     EXIT = "❌"
     WRENCH = "🔧"
+    HEALTH = "🩺"
+    DOWNGRADE = "⬇️"
+    MIRROR = "🌐"
 
     # UI icons
     ARROW_RIGHT = "►"
@@ -159,6 +162,9 @@ MENU_ITEMS = {
     MenuCategory.SYSTEM_MAINTENANCE: [
         ("7", f"{Icons.CLEAN} Clean cache", "Clean package cache to free space"),
         ("8", f"{Icons.RECYCLE} Remove orphans", "Remove unused dependency packages"),
+        ("d", f"{Icons.DOWNGRADE} Downgrade package", "Revert a package to a previous version"),
+        ("m", f"{Icons.MIRROR} Mirror manager", "Optimize pacman mirror list"),
+        ("s", f"{Icons.HEALTH} System health", "Check dependencies, disk usage, and optimize"),
     ],
     MenuCategory.OTHER: [
         ("9", f"{Icons.FONT} Font manager", "Install and manage system fonts"),

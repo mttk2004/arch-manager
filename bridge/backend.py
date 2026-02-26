@@ -571,6 +571,146 @@ class BackendCaller:
         """
         return self.call("system", "check_broken", timeout=timeout)
 
+    def update_database(self, timeout: Optional[int] = None) -> Response:
+        """
+        Sync package databases (pacman -Sy)
+
+        Args:
+            timeout: Operation timeout
+
+        Returns:
+            Response with sync results
+        """
+        return self.call("system", "update_database", timeout=timeout or 60)
+
+    def get_disk_usage(self, timeout: Optional[int] = None) -> Response:
+        """
+        Get disk usage information for package cache and logs
+
+        Args:
+            timeout: Operation timeout
+
+        Returns:
+            Response with disk usage data
+        """
+        return self.call("system", "disk_usage", timeout=timeout)
+
+    def optimize_database(self, timeout: Optional[int] = None) -> Response:
+        """
+        Optimize pacman database
+
+        Args:
+            timeout: Operation timeout
+
+        Returns:
+            Response with optimization results
+        """
+        return self.call("system", "optimize_database", timeout=timeout)
+
+    def clear_old_logs(
+        self,
+        days: int = 30,
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        Clear old pacman log files
+
+        Args:
+            days: Keep logs from last N days
+            timeout: Operation timeout
+
+        Returns:
+            Response with cleanup results
+        """
+        return self.call(
+            "system",
+            "clear_logs",
+            params={"args": [days]},
+            timeout=timeout,
+        )
+
+    def downgrade_package(
+        self,
+        package: str,
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        Downgrade a package to a previous cached version
+
+        Args:
+            package: Package name to downgrade
+            timeout: Operation timeout
+
+        Returns:
+            Response with available versions or downgrade result
+        """
+        self._validate_package_name(package)
+        return self.call(
+            "system",
+            "downgrade",
+            params={"args": [package]},
+            timeout=timeout or 120,
+        )
+
+    def list_cached_versions(
+        self,
+        package: str,
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        List cached versions of a package available for downgrade
+
+        Args:
+            package: Package name
+            timeout: Operation timeout
+
+        Returns:
+            Response with list of cached versions
+        """
+        self._validate_package_name(package)
+        return self.call(
+            "system",
+            "list_cached_versions",
+            params={"args": [package]},
+            timeout=timeout,
+        )
+
+    def update_mirrors(
+        self,
+        country: str = "",
+        count: int = 10,
+        timeout: Optional[int] = None,
+    ) -> Response:
+        """
+        Update pacman mirror list using reflector
+
+        Args:
+            country: Country code for filtering mirrors (empty for worldwide)
+            count: Number of mirrors to keep
+            timeout: Operation timeout
+
+        Returns:
+            Response with mirror update results
+        """
+        return self.call(
+            "system",
+            "update_mirrors",
+            params={"args": [country, str(count)]},
+            timeout=timeout or 120,
+        )
+
+    def get_mirror_status(self, timeout: Optional[int] = None) -> Response:
+        """
+        Get current mirror list status
+
+        Args:
+            timeout: Operation timeout
+
+        Returns:
+            Response with mirror status information
+        """
+        return self.call("system", "mirror_status", timeout=timeout)
+
     # Font Management Methods
 
     def install_fonts(

@@ -727,6 +727,229 @@ def run_wine_manager_menu() -> None:
         display_error(str(e), e.code)
 
 
+def run_system_health_menu() -> None:
+    """Run the system health check submenu"""
+    clear_screen()
+    console.print(create_header(f"{Icons.HEALTH} System Health", "Check system integrity and optimize"))
+    console.print()
+
+    health_items = [
+        ("broken", f"{Icons.WRENCH} Check broken dependencies"),
+        ("disk", f"{Icons.LIST} Disk usage info"),
+        ("optimize", f"{Icons.SPARKLES} Optimize package database"),
+        ("logs", f"{Icons.CLEAN} Clear old logs"),
+        ("back", f"{Icons.BACK} Back to main menu"),
+    ]
+
+    choice = prompt_select("Select an action:", health_items)
+
+    try:
+        if choice == "broken":
+            display_info("Checking for broken dependencies...")
+            response = backend.check_broken()
+            if response.is_success() and response.data:
+                data = response.data
+                broken_count = data.get("broken_count", 0)
+                if broken_count == 0:
+                    display_success("No broken dependencies found! System is healthy.")
+                else:
+                    broken_pkgs = data.get("broken_packages", [])
+                    missing = data.get("missing_dependencies", [])
+                    display_warning(f"Found {broken_count} package(s) with issues")
+                    if broken_pkgs:
+                        console.print(f"\n  [bold]Affected packages:[/bold]")
+                        for pkg in broken_pkgs:
+                            console.print(f"    {Icons.ERROR} [red]{pkg}[/red]")
+                    if missing:
+                        console.print(f"\n  [bold]Missing dependencies:[/bold]")
+                        for dep in missing:
+                            console.print(f"    {Icons.WARNING} [yellow]{dep}[/yellow]")
+            else:
+                display_operation_result(response.to_dict())
+
+        elif choice == "disk":
+            display_info("Retrieving disk usage information...")
+            response = backend.get_disk_usage()
+            if response.is_success() and response.data:
+                data = response.data
+                table = Table(
+                    show_header=False,
+                    box=None,
+                    padding=(0, 2),
+                    expand=True,
+                )
+                table.add_column("Field", style=Colors.LABEL, width=20, no_wrap=True)
+                table.add_column("Value", style=Colors.TEXT)
+
+                table.add_row("Cache size", f"[{Colors.PKG_SIZE}]{data.get('cache_size', 'N/A')}[/{Colors.PKG_SIZE}]")
+                table.add_row("Cached packages", str(data.get("cache_packages", "N/A")))
+                table.add_row("Log size", data.get("log_size", "N/A"))
+                table.add_row("Installed size", f"[{Colors.PKG_SIZE}]{data.get('installed_size', 'N/A')}[/{Colors.PKG_SIZE}]")
+
+                panel = Panel(
+                    table,
+                    title=f"{Icons.LIST} Disk Usage",
+                    border_style=Colors.PRIMARY,
+                    padding=(1, 1),
+                )
+                console.print(panel)
+            else:
+                display_operation_result(response.to_dict())
+
+        elif choice == "optimize":
+            display_info("Optimizing package database...")
+            response = backend.optimize_database()
+            display_operation_result(response.to_dict())
+
+        elif choice == "logs":
+            days = 30
+            display_info(f"Clearing logs older than {days} days...")
+            response = backend.clear_old_logs(days=days)
+            display_operation_result(response.to_dict())
+
+        elif choice == "back":
+            return
+
+    except BackendError as e:
+        display_error(str(e), e.code)
+
+
+def run_downgrade_menu() -> None:
+    """Run the package downgrade flow"""
+    clear_screen()
+    console.print(create_header(f"{Icons.DOWNGRADE} Downgrade Package", "Revert a package to a previous version"))
+    console.print()
+
+    # Get installed packages for autocomplete
+    with console.status("[cyan]Loading installed packages...", spinner="dots"):
+        installed = get_installed_packages()
+
+    if installed:
+        package = prompt_autocomplete("Enter package name to downgrade", installed)
+    else:
+        package = prompt_text("Enter package name to downgrade")
+
+    if not package:
+        return
+
+    try:
+        # First show cached versions
+        display_info(f"Looking for cached versions of '{package}'...")
+        response = backend.list_cached_versions(package)
+        if response.is_success() and response.data:
+            data = response.data
+            current = data.get("current_version", "unknown")
+            versions = data.get("cached_versions", [])
+            count = data.get("count", 0)
+
+            console.print(f"\n  Current version: [{Colors.PKG_VERSION}]{current}[/{Colors.PKG_VERSION}]")
+            console.print(f"  Cached versions: {count}\n")
+
+            if count == 0:
+                display_warning("No cached versions found in /var/cache/pacman/pkg")
+                return
+
+            for i, ver in enumerate(versions[:10], 1):
+                marker = " [green](current)[/green]" if ver == current else ""
+                console.print(f"    {i}. [{Colors.PKG_VERSION}]{ver}[/{Colors.PKG_VERSION}]{marker}")
+
+            if count > 10:
+                console.print(f"\n    [dim]... and {count - 10} more[/dim]")
+
+            console.print()
+
+            if prompt_confirm(f"Downgrade {package}?", default=False):
+                display_info(f"Downgrading {package}...")
+                response = backend.downgrade_package(package)
+                display_operation_result(response.to_dict())
+            else:
+                display_info("Downgrade cancelled")
+        else:
+            display_operation_result(response.to_dict())
+
+    except BackendError as e:
+        display_error(str(e), e.code)
+
+
+def run_mirror_manager_menu() -> None:
+    """Run the mirror management submenu"""
+    clear_screen()
+    console.print(create_header(f"{Icons.MIRROR} Mirror Manager", "Optimize pacman mirror list"))
+    console.print()
+
+    mirror_items = [
+        ("status", f"{Icons.INFO} Mirror status"),
+        ("update", f"{Icons.UPDATE} Update mirrors (reflector)"),
+        ("back", f"{Icons.BACK} Back to main menu"),
+    ]
+
+    choice = prompt_select("Select an action:", mirror_items)
+
+    try:
+        if choice == "status":
+            display_info("Checking mirror status...")
+            response = backend.get_mirror_status()
+            if response.is_success() and response.data:
+                data = response.data
+                table = Table(
+                    show_header=False,
+                    box=None,
+                    padding=(0, 2),
+                    expand=True,
+                )
+                table.add_column("Field", style=Colors.LABEL, width=20, no_wrap=True)
+                table.add_column("Value", style=Colors.TEXT)
+
+                table.add_row("Active mirrors", str(data.get("mirror_count", 0)))
+                age = data.get("age_days", "unknown")
+                age_style = Colors.SUCCESS if str(age).isdigit() and int(age) < 30 else Colors.WARNING
+                table.add_row("Mirrorlist age", f"[{age_style}]{age} days[/{age_style}]")
+                table.add_row("Backup exists", "Yes" if data.get("has_backup") == "true" else "No")
+
+                reflector = data.get("reflector_installed") == "true"
+                table.add_row("Reflector", f"[green]Installed[/green]" if reflector else f"[yellow]Not installed[/yellow]")
+
+                top_mirrors = data.get("top_mirrors", [])
+                if top_mirrors:
+                    table.add_row("Top mirror", top_mirrors[0] if top_mirrors else "N/A")
+
+                panel = Panel(
+                    table,
+                    title=f"{Icons.MIRROR} Mirror Status",
+                    border_style=Colors.PRIMARY,
+                    padding=(1, 1),
+                )
+                console.print(panel)
+            else:
+                display_operation_result(response.to_dict())
+
+        elif choice == "update":
+            countries = [
+                ("", "Worldwide (best from all countries)"),
+                ("US", "United States"),
+                ("DE", "Germany"),
+                ("FR", "France"),
+                ("GB", "United Kingdom"),
+                ("JP", "Japan"),
+                ("AU", "Australia"),
+                ("SG", "Singapore"),
+                ("KR", "South Korea"),
+                ("VN", "Vietnam"),
+            ]
+            country = prompt_select("Select mirror region:", countries)
+
+            if country is not None:
+                display_info("Updating mirror list with reflector... This may take a minute.")
+                response = backend.update_mirrors(country=country, count=10)
+                display_operation_result(response.to_dict())
+
+        elif choice == "back":
+            return
+
+    except BackendError as e:
+        display_error(str(e), e.code)
+
+
 @app.command()
 def menu() -> None:
     """
@@ -945,6 +1168,18 @@ def run_interactive_menu() -> None:
                 display_info("Removing orphaned packages...")
                 response = backend.remove_orphans(no_confirm=False)
                 display_operation_result(response.to_dict())
+                pause()
+
+            elif choice == "d":
+                run_downgrade_menu()
+                pause()
+
+            elif choice == "m":
+                run_mirror_manager_menu()
+                pause()
+
+            elif choice == "s":
+                run_system_health_menu()
                 pause()
 
             elif choice == "9":
