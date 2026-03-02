@@ -52,7 +52,6 @@ from ui.components import (
     prompt_confirm,
     prompt_select,
     prompt_text,
-    show_progress,
 )
 from ui.theme import Colors, Icons, MENU_ITEMS
 
@@ -269,7 +268,7 @@ def install(
             display_operation_result(response.to_dict())
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
         raise typer.Exit(code=1)
 
 
@@ -325,7 +324,7 @@ def remove(
             display_operation_result(response.to_dict())
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
         raise typer.Exit(code=1)
 
 
@@ -364,7 +363,7 @@ def search(
             display_warning("No results found")
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
         raise typer.Exit(code=1)
 
 
@@ -418,7 +417,7 @@ def info(
             console.print(panel)
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
         raise typer.Exit(code=1)
 
 
@@ -463,7 +462,7 @@ def list(
                             console.print(f"{i:4d}. {pkg}")
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
         raise typer.Exit(code=1)
 
 
@@ -502,18 +501,14 @@ def update(
                     return
 
             # Perform update
-            progress, task = show_progress("Updating system...", total=None)
-            progress.start()
-
-            response = backend.update_system(no_confirm=True, aur=aur)
-
-            progress.stop()
+            with console.status("[cyan]Updating system...", spinner="dots"):
+                response = backend.update_system(no_confirm=True, aur=aur)
 
             # Display results
             display_operation_result(response.to_dict())
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
         raise typer.Exit(code=1)
 
 
@@ -538,7 +533,7 @@ def clean(
             display_info("Cleanup cancelled")
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
         raise typer.Exit(code=1)
 
 
@@ -603,7 +598,7 @@ def run_font_manager_menu() -> None:
             return
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
 
 
 def run_wine_manager_menu() -> None:
@@ -724,7 +719,7 @@ def run_wine_manager_menu() -> None:
             return
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
 
 
 def run_system_health_menu() -> None:
@@ -811,7 +806,7 @@ def run_system_health_menu() -> None:
             return
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
 
 
 def run_downgrade_menu() -> None:
@@ -868,7 +863,7 @@ def run_downgrade_menu() -> None:
             display_operation_result(response.to_dict())
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
 
 
 def run_mirror_manager_menu() -> None:
@@ -947,7 +942,7 @@ def run_mirror_manager_menu() -> None:
             return
 
     except BackendError as e:
-        display_error(str(e), e.code)
+        display_error(e.message, e.code)
 
 
 @app.command()

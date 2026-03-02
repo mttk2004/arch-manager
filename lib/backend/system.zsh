@@ -69,7 +69,14 @@ clean_cache() {
 # =============================================================================
 
 remove_orphans() {
-    local no_confirm="${1:-false}"
+    # Accept --no-confirm flag or positional true/false
+    local no_confirm="false"
+    for arg in "$@"; do
+        case "$arg" in
+            --no-confirm) no_confirm="true" ;;
+            true|false) no_confirm="$arg" ;;
+        esac
+    done
 
     # Find orphaned packages
     local orphans=()
