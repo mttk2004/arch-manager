@@ -788,6 +788,15 @@ class BackendCaller:
 
     # Wine Management Methods
 
+    def enable_multilib(self, timeout: Optional[int] = None) -> Response:
+        """
+        Enable the [multilib] repository in /etc/pacman.conf
+
+        Returns:
+            Response with multilib enablement results
+        """
+        return self.call("wine", "enable_multilib", timeout=timeout or 60)
+
     def install_wine(
         self,
         variant: str = "staging",
