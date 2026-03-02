@@ -80,7 +80,16 @@ source "${LIB_DIR}/core/detect.zsh"
 # =============================================================================
 
 install_packages() {
-    local packages=("$@")
+    # Separate package names from option flags (e.g. --no-confirm, --as-deps)
+    local packages=()
+    local as_deps=false
+    for arg in "$@"; do
+        case "$arg" in
+            --as-deps) as_deps=true ;;
+            --*) ;;  # ignore other flags; script always uses --noconfirm
+            *) packages+=("$arg") ;;
+        esac
+    done
 
     # Validate input
     if [[ ${#packages[@]} -eq 0 ]]; then
@@ -109,7 +118,9 @@ install_packages() {
         fi
 
         # Attempt installation
-        if sudo "$cmd" -S --noconfirm "$pkg" &>/dev/null; then
+        local install_flags=(--noconfirm)
+        [[ "$as_deps" == "true" ]] && install_flags+=(--asdeps)
+        if sudo "$cmd" -S "${install_flags[@]}" "$pkg" &>/dev/null; then
             installed+=("$pkg")
         else
             failed+=("$pkg")
@@ -141,7 +152,16 @@ install_packages() {
 # =============================================================================
 
 remove_packages() {
-    local packages=("$@")
+    # Separate package names from option flags (e.g. --no-confirm, --recursive)
+    local packages=()
+    local recursive=false
+    for arg in "$@"; do
+        case "$arg" in
+            --recursive) recursive=true ;;
+            --*) ;;  # ignore other flags; script always uses --noconfirm
+            *) packages+=("$arg") ;;
+        esac
+    done
 
     # Validate input
     if [[ ${#packages[@]} -eq 0 ]]; then
@@ -162,7 +182,9 @@ remove_packages() {
         fi
 
         # Attempt removal
-        if sudo pacman -R --noconfirm "$pkg" &>/dev/null; then
+        local remove_flags=(-R --noconfirm)
+        [[ "$recursive" == "true" ]] && remove_flags=(-Rns --noconfirm)
+        if sudo pacman "${remove_flags[@]}" "$pkg" &>/dev/null; then
             removed+=("$pkg")
         else
             failed+=("$pkg")
