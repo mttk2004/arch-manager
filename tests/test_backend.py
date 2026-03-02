@@ -357,6 +357,11 @@ class TestConvenienceMethods:
 
     # Wine methods
 
+    def test_enable_multilib(self, caller):
+        with self._mock_call(caller) as mock:
+            caller.enable_multilib()
+            assert args_contain(mock, "wine", "enable_multilib")
+
     def test_install_wine(self, caller):
         with self._mock_call(caller) as mock:
             caller.install_wine(variant="staging")

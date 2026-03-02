@@ -15,17 +15,56 @@ source "${LIB_DIR}/core/json.zsh"
 source "${LIB_DIR}/core/detect.zsh"
 
 # =============================================================================
+# Enable Multilib Repository
+# =============================================================================
+
+# Internal helper: enables [multilib] in pacman.conf and syncs the DB.
+# Outputs nothing; returns 0 on success, 1 on failure.
+_enable_multilib_internal() {
+    # Nothing to do if already enabled
+    if grep -q "^\[multilib\]" /etc/pacman.conf 2>/dev/null; then
+        return 0
+    fi
+
+    # Uncomment existing commented-out [multilib] section.
+    # The standard Arch pacman.conf has exactly two consecutive commented lines:
+    #   #[multilib]
+    #   #Include = /etc/pacman.d/mirrorlist
+    if grep -q "^#\[multilib\]" /etc/pacman.conf 2>/dev/null; then
+        sudo sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf || return 1
+    else
+        # Add a new [multilib] section at the end of the file
+        printf "\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n" | sudo tee -a /etc/pacman.conf > /dev/null || return 1
+    fi
+
+    # Force-refresh all package databases to ensure the new multilib DB is fetched
+    sudo pacman -Syy &>/dev/null || return 1
+    return 0
+}
+
+enable_multilib() {
+    local already_enabled="false"
+    grep -q "^\[multilib\]" /etc/pacman.conf 2>/dev/null && already_enabled="true"
+
+    if _enable_multilib_internal; then
+        json_success "Multilib repository enabled" \
+            "$(json_object "multilib_enabled" "true" "already_enabled" "$already_enabled")"
+    else
+        json_system_error "Failed to enable [multilib] in /etc/pacman.conf" "/etc/pacman.conf"
+        return 1
+    fi
+}
+
+# =============================================================================
 # Wine Installation
 # =============================================================================
 
 install_wine() {
     local variant="${1:-staging}"  # wine, wine-staging, wine-ge-custom
 
-    # Check if multilib is enabled
-    if ! grep -q "^\[multilib\]" /etc/pacman.conf 2>/dev/null; then
-        json_error "MULTILIB_DISABLED" \
-            "The [multilib] repository is not enabled in /etc/pacman.conf" \
-            "$(json_object "suggestion" "Enable [multilib] in /etc/pacman.conf and run pacman -Syu")"
+    # Automatically enable multilib if not already enabled
+    if ! _enable_multilib_internal; then
+        json_system_error "Failed to enable [multilib] repository required for Wine" "/etc/pacman.conf"
         return 1
     fi
 
@@ -311,6 +350,9 @@ main() {
         install)
             install_wine "$@"
             ;;
+        enable_multilib)
+            enable_multilib
+            ;;
         status)
             wine_status
             ;;
@@ -326,7 +368,7 @@ main() {
         *)
             json_error "INVALID_ACTION" \
                 "Unknown action: $action" \
-                "$(json_object "action" "$action" "suggestion" "Use: install, status, configure_prefix, install_component, uninstall")"
+                "$(json_object "action" "$action" "suggestion" "Use: install, enable_multilib, status, configure_prefix, install_component, uninstall")"
             exit 1
             ;;
     esac
