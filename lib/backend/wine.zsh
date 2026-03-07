@@ -21,8 +21,15 @@ source "${LIB_DIR}/core/detect.zsh"
 # Internal helper: enables [multilib] in pacman.conf and syncs the DB.
 # Outputs nothing; returns 0 on success, 1 on failure.
 _enable_multilib_internal() {
-    # Nothing to do if already enabled
-    if grep -q "^\[multilib\]" /etc/pacman.conf 2>/dev/null; then
+    # Consider multilib truly ready only when BOTH the pacman.conf section
+    # AND the sync database file exist.  The section can be present without
+    # a DB when the user added it manually but never ran `pacman -Sy`.
+    local conf_ok=false
+    local db_ok=false
+    grep -q "^\[multilib\]" /etc/pacman.conf 2>/dev/null && conf_ok=true
+    [[ -f /var/lib/pacman/sync/multilib.db ]] && db_ok=true
+
+    if $conf_ok && $db_ok; then
         return 0
     fi
 
@@ -30,15 +37,21 @@ _enable_multilib_internal() {
     # The standard Arch pacman.conf has exactly two consecutive commented lines:
     #   #[multilib]
     #   #Include = /etc/pacman.d/mirrorlist
-    if grep -q "^#\[multilib\]" /etc/pacman.conf 2>/dev/null; then
-        sudo sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf || return 1
-    else
-        # Add a new [multilib] section at the end of the file
-        printf "\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n" | sudo tee -a /etc/pacman.conf > /dev/null || return 1
+    # Only touch pacman.conf when the section is missing
+    if ! $conf_ok; then
+        if grep -q "^#\[multilib\]" /etc/pacman.conf 2>/dev/null; then
+            sudo sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf || return 1
+        else
+            # Add a new [multilib] section at the end of the file
+            printf "\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n" | sudo tee -a /etc/pacman.conf > /dev/null || return 1
+        fi
     fi
 
-    # Force-refresh all package databases to ensure the new multilib DB is fetched
-    sudo pacman -Syy &>/dev/null || return 1
+    # Always sync when the DB is missing so the multilib package list is available
+    if ! $db_ok; then
+        sudo pacman -Syy 2>/dev/null || return 1
+    fi
+
     return 0
 }
 
