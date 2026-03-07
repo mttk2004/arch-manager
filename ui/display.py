@@ -126,7 +126,7 @@ def display_operation_result(response: dict[str, Any]) -> None:
     data = response.get("data", {})
 
     if status == "success":
-        display_success(message, data)
+        display_success(message)
     elif status == "error":
         error = response.get("error", {})
         error_code = error.get("code")
@@ -137,36 +137,51 @@ def display_operation_result(response: dict[str, Any]) -> None:
     else:
         display_info(message)
 
-    # Render a secondary panel with package-level details when present
-    if data and isinstance(data, dict):
-        details = Text()
-        has_details = False
+    # Render a secondary details panel for any status that carries
+    # package-level installed / removed / failed lists.
+    # This covers success, warning, and partial-failure responses alike.
+    if not data or not isinstance(data, dict):
+        return
 
-        if data.get("installed"):
-            has_details = True
-            details.append(f"\n  {Icons.SUCCESS} Installed: ", style=Colors.SUCCESS_BOLD)
-            details.append(", ".join(data["installed"]), style=Colors.SUCCESS)
+    details = Text()
+    has_details = False
 
-        if data.get("removed"):
-            has_details = True
-            details.append(f"\n  {Icons.SUCCESS} Removed: ", style=Colors.WARNING_BOLD)
-            details.append(", ".join(data["removed"]), style=Colors.WARNING)
+    if data.get("installed"):
+        has_details = True
+        details.append(f"\n  {Icons.SUCCESS} Installed: ", style=Colors.SUCCESS_BOLD)
+        details.append(", ".join(data["installed"]), style=Colors.SUCCESS)
 
-        if data.get("failed"):
-            has_details = True
-            details.append(f"\n  {Icons.ERROR} Failed: ", style=Colors.ERROR_BOLD)
-            details.append(", ".join(data["failed"]), style=Colors.ERROR)
+    if data.get("optional_installed"):
+        has_details = True
+        details.append(f"\n  {Icons.SUCCESS} Optional deps installed: ", style=Colors.SUCCESS_BOLD)
+        details.append(", ".join(data["optional_installed"]), style=Colors.SUCCESS)
 
-        if has_details:
-            console.print(
-                Panel(
-                    details,
-                    title="Operation Details",
-                    title_align="left",
-                    border_style=Colors.TEXT_DIM,
-                    padding=(0, 1),
-                )
+    if data.get("removed"):
+        has_details = True
+        details.append(f"\n  {Icons.SUCCESS} Removed: ", style=Colors.WARNING_BOLD)
+        details.append(", ".join(data["removed"]), style=Colors.WARNING)
+
+    if data.get("failed"):
+        has_details = True
+        details.append(f"\n  {Icons.ERROR} Failed: ", style=Colors.ERROR_BOLD)
+        details.append(", ".join(data["failed"]), style=Colors.ERROR)
+        details.append(
+            "\n\n  [dim]Tip: run the operation again or install failed packages manually.[/dim]",
+            style="",
+        )
+
+    if has_details:
+        # Use a warning border when there are failures, otherwise dim
+        border = Colors.BORDER_WARNING if data.get("failed") else Colors.TEXT_DIM
+        console.print(
+            Panel(
+                details,
+                title="Operation Details",
+                title_align="left",
+                border_style=border,
+                padding=(0, 1),
             )
+        )
 
 
 # =============================================================================

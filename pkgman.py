@@ -15,27 +15,20 @@ from pathlib import Path
 from typing import List, Optional
 
 import typer
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
-from rich.text import Text
 
 # Add project root to Python path
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from bridge.logging_config import setup_logging
-
 from bridge.backend import BackendCaller
-from bridge.errors import BackendError, BackendTimeoutError, InvalidResponseError
+from bridge.errors import BackendError
+from bridge.logging_config import setup_logging
 from ui.components import (
     clear_screen,
     console,
     create_app_header,
     create_grouped_menu,
     create_header,
-    create_menu_panel,
-    create_package_table,
     create_search_results_table,
     display_error,
     display_info,
@@ -43,19 +36,14 @@ from ui.components import (
     display_success,
     display_warning,
     pause,
-    print_divider,
-    print_header,
     prompt_autocomplete,
     prompt_autocomplete_multi,
     prompt_checkbox,
-    prompt_choice,
     prompt_confirm,
     prompt_select,
     prompt_text,
 )
-from ui.theme import Colors, Icons, MENU_ITEMS
-
-
+from ui.theme import MENU_ITEMS, Colors, Icons
 
 # Initialize Typer app
 app = typer.Typer(
@@ -68,7 +56,7 @@ app = typer.Typer(
 backend = BackendCaller()
 
 # Cache for package lists (to avoid repeated backend calls)
-_package_cache = {
+_package_cache: Dict[str, Optional[List[str]]] = {
     "available": None,
     "installed": None,
 }
@@ -85,7 +73,6 @@ DEBUG_MODE = False
 def authenticate_sudo(use_polkit: bool = False) -> bool:
     """
     Pre-authenticate sudo access for the session
-
     This prompts for password once at startup and caches it for the session,
     avoiding multiple password prompts during operations.
 
@@ -95,8 +82,8 @@ def authenticate_sudo(use_polkit: bool = False) -> bool:
     Returns:
         True if authenticated successfully, False otherwise
     """
-    import subprocess
     import shutil
+    import subprocess
 
     try:
         if use_polkit:
@@ -107,10 +94,7 @@ def authenticate_sudo(use_polkit: bool = False) -> bool:
             else:
                 # Test pkexec with a simple command
                 result = subprocess.run(
-                    ["pkexec", "--user", "root", "true"],
-                    capture_output=True,
-                    text=True,
-                    timeout=30
+                    ["pkexec", "--user", "root", "true"], capture_output=True, text=True, timeout=30
                 )
 
                 if result.returncode == 0:
@@ -123,12 +107,7 @@ def authenticate_sudo(use_polkit: bool = False) -> bool:
         # Standard sudo authentication
         # Test sudo access with a simple command
         # This will prompt for password if needed and cache it
-        result = subprocess.run(
-            ["sudo", "-v"],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+        result = subprocess.run(["sudo", "-v"], capture_output=True, text=True, timeout=30)
 
         if result.returncode == 0:
             display_success("Sudo authentication successful")
@@ -252,7 +231,10 @@ def install(
         if len(packages) > 1:
             # Multi-package installation with progress bar
             from ui.components import install_packages_with_progress
-            success, failed = install_packages_with_progress(packages, backend, as_deps=as_deps, debug=DEBUG_MODE)
+
+            success, failed = install_packages_with_progress(
+                packages, backend, as_deps=as_deps, debug=DEBUG_MODE
+            )
 
             console.print()
             if success:
@@ -264,7 +246,9 @@ def install(
         else:
             # Single package - simple execution (sudo already authenticated)
             display_info("Installing package...")
-            response = backend.install_packages(packages, no_confirm=True, as_deps=as_deps, timeout=300)
+            response = backend.install_packages(
+                packages, no_confirm=True, as_deps=as_deps, timeout=300
+            )
             display_operation_result(response.to_dict())
 
     except BackendError as e:
@@ -289,7 +273,9 @@ def remove(
         if not no_confirm:
             from ui.components import display_installation_summary
 
-            confirmed, remove_deps = display_installation_summary(packages, operation="remove", ask_recursive=True)
+            confirmed, remove_deps = display_installation_summary(
+                packages, operation="remove", ask_recursive=True
+            )
             if not confirmed:
                 display_warning("Removal cancelled")
                 return
@@ -308,7 +294,10 @@ def remove(
         if len(packages) > 1:
             # Multi-package removal with progress bar
             from ui.components import remove_packages_with_progress
-            success, failed = remove_packages_with_progress(packages, backend, recursive=recursive, debug=DEBUG_MODE)
+
+            success, failed = remove_packages_with_progress(
+                packages, backend, recursive=recursive, debug=DEBUG_MODE
+            )
 
             console.print()
             if success:
@@ -320,7 +309,9 @@ def remove(
         else:
             # Single package - simple execution (sudo already authenticated)
             display_info("Removing package...")
-            response = backend.remove_packages(packages, no_confirm=True, recursive=recursive, timeout=300)
+            response = backend.remove_packages(
+                packages, no_confirm=True, recursive=recursive, timeout=300
+            )
             display_operation_result(response.to_dict())
 
     except BackendError as e:
@@ -397,14 +388,27 @@ def info(
             table.add_column("Value", style=Colors.TEXT)
 
             table.add_row("Name", data.get("name", "N/A"))
-            table.add_row("Version", f"[{Colors.PKG_VERSION}]{data.get('version', 'N/A')}[/{Colors.PKG_VERSION}]")
-            table.add_row("Repository", f"[{Colors.PKG_REPO}]{data.get('repository', 'N/A')}[/{Colors.PKG_REPO}]")
+            table.add_row(
+                "Version",
+                f"[{Colors.PKG_VERSION}]{data.get('version', 'N/A')}[/{Colors.PKG_VERSION}]",
+            )
+            table.add_row(
+                "Repository",
+                f"[{Colors.PKG_REPO}]{data.get('repository', 'N/A')}[/{Colors.PKG_REPO}]",
+            )
 
             installed = data.get("installed") == "true"
-            status_text = f"[{Colors.PKG_INSTALLED}]Yes {Icons.SUCCESS}[/{Colors.PKG_INSTALLED}]" if installed else f"[{Colors.PKG_NOT_INSTALLED}]No {Icons.ERROR}[/{Colors.PKG_NOT_INSTALLED}]"
+            status_text = (
+                f"[{Colors.PKG_INSTALLED}]Yes {Icons.SUCCESS}[/{Colors.PKG_INSTALLED}]"
+                if installed
+                else f"[{Colors.PKG_NOT_INSTALLED}]No {Icons.ERROR}[/{Colors.PKG_NOT_INSTALLED}]"
+            )
             table.add_row("Installed", status_text)
 
-            table.add_row("Size", f"[{Colors.PKG_SIZE}]{data.get('installed_size', 'N/A')}[/{Colors.PKG_SIZE}]")
+            table.add_row(
+                "Size",
+                f"[{Colors.PKG_SIZE}]{data.get('installed_size', 'N/A')}[/{Colors.PKG_SIZE}]",
+            )
             table.add_row("Description", data.get("description", "N/A"))
             table.add_row("URL", f"[link={data.get('url', '')}]{data.get('url', 'N/A')}[/link]")
 
@@ -604,7 +608,11 @@ def run_font_manager_menu() -> None:
 def run_wine_manager_menu() -> None:
     """Run the Wine manager submenu"""
     clear_screen()
-    console.print(create_header(f"{Icons.WINE} Wine Manager", "Install and configure Wine for Windows applications"))
+    console.print(
+        create_header(
+            f"{Icons.WINE} Wine Manager", "Install and configure Wine for Windows applications"
+        )
+    )
     console.print()
 
     wine_items = [
@@ -636,20 +644,42 @@ def run_wine_manager_menu() -> None:
                 table.add_column("Value", style=Colors.TEXT)
 
                 installed = data.get("installed") == "true" or data.get("installed") is True
-                status_text = f"[{Colors.PKG_INSTALLED}]Yes {Icons.SUCCESS}[/{Colors.PKG_INSTALLED}]" if installed else f"[{Colors.PKG_NOT_INSTALLED}]No {Icons.ERROR}[/{Colors.PKG_NOT_INSTALLED}]"
+                status_text = (
+                    f"[{Colors.PKG_INSTALLED}]Yes {Icons.SUCCESS}[/{Colors.PKG_INSTALLED}]"
+                    if installed
+                    else f"[{Colors.PKG_NOT_INSTALLED}]No {Icons.ERROR}[/{Colors.PKG_NOT_INSTALLED}]"
+                )
                 table.add_row("Installed", status_text)
 
                 if installed:
                     table.add_row("Variant", data.get("variant", "N/A"))
-                    table.add_row("Version", f"[{Colors.PKG_VERSION}]{data.get('version', 'N/A')}[/{Colors.PKG_VERSION}]")
+                    table.add_row(
+                        "Version",
+                        f"[{Colors.PKG_VERSION}]{data.get('version', 'N/A')}[/{Colors.PKG_VERSION}]",
+                    )
                     table.add_row("Prefix", data.get("prefix", "N/A"))
-                    prefix_exists = data.get("prefix_exists") == "true" or data.get("prefix_exists") is True
-                    table.add_row("Prefix exists", f"[green]Yes[/green]" if prefix_exists else f"[yellow]No[/yellow]")
+                    prefix_exists = (
+                        data.get("prefix_exists") == "true" or data.get("prefix_exists") is True
+                    )
+                    table.add_row(
+                        "Prefix exists",
+                        f"[green]Yes[/green]" if prefix_exists else f"[yellow]No[/yellow]",
+                    )
                     winetricks = data.get("winetricks") == "true" or data.get("winetricks") is True
-                    table.add_row("Winetricks", f"[green]Installed[/green]" if winetricks else f"[yellow]Not installed[/yellow]")
+                    table.add_row(
+                        "Winetricks",
+                        f"[green]Installed[/green]"
+                        if winetricks
+                        else f"[yellow]Not installed[/yellow]",
+                    )
 
-                multilib = data.get("multilib_enabled") == "true" or data.get("multilib_enabled") is True
-                table.add_row("Multilib repo", f"[green]Enabled[/green]" if multilib else f"[red]Disabled[/red]")
+                multilib = (
+                    data.get("multilib_enabled") == "true" or data.get("multilib_enabled") is True
+                )
+                table.add_row(
+                    "Multilib repo",
+                    f"[green]Enabled[/green]" if multilib else f"[red]Disabled[/red]",
+                )
 
                 optional_deps = data.get("optional_deps", [])
                 if optional_deps:
@@ -725,7 +755,9 @@ def run_wine_manager_menu() -> None:
 def run_system_health_menu() -> None:
     """Run the system health check submenu"""
     clear_screen()
-    console.print(create_header(f"{Icons.HEALTH} System Health", "Check system integrity and optimize"))
+    console.print(
+        create_header(f"{Icons.HEALTH} System Health", "Check system integrity and optimize")
+    )
     console.print()
 
     health_items = [
@@ -776,10 +808,16 @@ def run_system_health_menu() -> None:
                 table.add_column("Field", style=Colors.LABEL, width=20, no_wrap=True)
                 table.add_column("Value", style=Colors.TEXT)
 
-                table.add_row("Cache size", f"[{Colors.PKG_SIZE}]{data.get('cache_size', 'N/A')}[/{Colors.PKG_SIZE}]")
+                table.add_row(
+                    "Cache size",
+                    f"[{Colors.PKG_SIZE}]{data.get('cache_size', 'N/A')}[/{Colors.PKG_SIZE}]",
+                )
                 table.add_row("Cached packages", str(data.get("cache_packages", "N/A")))
                 table.add_row("Log size", data.get("log_size", "N/A"))
-                table.add_row("Installed size", f"[{Colors.PKG_SIZE}]{data.get('installed_size', 'N/A')}[/{Colors.PKG_SIZE}]")
+                table.add_row(
+                    "Installed size",
+                    f"[{Colors.PKG_SIZE}]{data.get('installed_size', 'N/A')}[/{Colors.PKG_SIZE}]",
+                )
 
                 panel = Panel(
                     table,
@@ -812,7 +850,11 @@ def run_system_health_menu() -> None:
 def run_downgrade_menu() -> None:
     """Run the package downgrade flow"""
     clear_screen()
-    console.print(create_header(f"{Icons.DOWNGRADE} Downgrade Package", "Revert a package to a previous version"))
+    console.print(
+        create_header(
+            f"{Icons.DOWNGRADE} Downgrade Package", "Revert a package to a previous version"
+        )
+    )
     console.print()
 
     # Get installed packages for autocomplete
@@ -837,7 +879,9 @@ def run_downgrade_menu() -> None:
             versions = data.get("cached_versions", [])
             count = data.get("count", 0)
 
-            console.print(f"\n  Current version: [{Colors.PKG_VERSION}]{current}[/{Colors.PKG_VERSION}]")
+            console.print(
+                f"\n  Current version: [{Colors.PKG_VERSION}]{current}[/{Colors.PKG_VERSION}]"
+            )
             console.print(f"  Cached versions: {count}\n")
 
             if count == 0:
@@ -846,7 +890,9 @@ def run_downgrade_menu() -> None:
 
             for i, ver in enumerate(versions[:10], 1):
                 marker = " [green](current)[/green]" if ver == current else ""
-                console.print(f"    {i}. [{Colors.PKG_VERSION}]{ver}[/{Colors.PKG_VERSION}]{marker}")
+                console.print(
+                    f"    {i}. [{Colors.PKG_VERSION}]{ver}[/{Colors.PKG_VERSION}]{marker}"
+                )
 
             if count > 10:
                 console.print(f"\n    [dim]... and {count - 10} more[/dim]")
@@ -897,12 +943,17 @@ def run_mirror_manager_menu() -> None:
 
                 table.add_row("Active mirrors", str(data.get("mirror_count", 0)))
                 age = data.get("age_days", "unknown")
-                age_style = Colors.SUCCESS if str(age).isdigit() and int(age) < 30 else Colors.WARNING
+                age_style = (
+                    Colors.SUCCESS if str(age).isdigit() and int(age) < 30 else Colors.WARNING
+                )
                 table.add_row("Mirrorlist age", f"[{age_style}]{age} days[/{age_style}]")
                 table.add_row("Backup exists", "Yes" if data.get("has_backup") == "true" else "No")
 
                 reflector = data.get("reflector_installed") == "true"
-                table.add_row("Reflector", f"[green]Installed[/green]" if reflector else f"[yellow]Not installed[/yellow]")
+                table.add_row(
+                    "Reflector",
+                    f"[green]Installed[/green]" if reflector else f"[yellow]Not installed[/yellow]",
+                )
 
                 top_mirrors = data.get("top_mirrors", [])
                 if top_mirrors:
@@ -957,26 +1008,24 @@ def run_interactive_menu() -> None:
     """Run the interactive main menu"""
     # Pre-authenticate sudo once at startup
     clear_screen()
-    console.print(create_header(
-        "🚀 Arch Zsh Manager",
-        "Initializing..."
-    ))
+    console.print(create_header("🚀 Arch Zsh Manager", "Initializing..."))
     console.print()
     display_info("This manager requires sudo access for package operations.")
     console.print()
 
     # Ask user for authentication method
     from ui.components import prompt_select
+
     auth_method = prompt_select(
         "Choose authentication method:",
         [
             ("sudo", "Terminal sudo (enter password in terminal)"),
             ("polkit", "Polkit/pkexec (GUI password prompt)"),
-        ]
+        ],
     )
 
     console.print()
-    use_polkit = (auth_method == "polkit")
+    use_polkit = auth_method == "polkit"
 
     if not authenticate_sudo(use_polkit=use_polkit):
         display_error("Cannot proceed without sudo access. Exiting...")
@@ -1002,11 +1051,7 @@ def run_interactive_menu() -> None:
                 menu_items.append((key, label))
 
         # Get user choice using interactive arrow-key menu
-        choice = prompt_select(
-            "Select an action:",
-            menu_items,
-            use_shortcuts=True
-        )
+        choice = prompt_select("Select an action:", menu_items, use_shortcuts=True)
 
         try:
             if choice == "1":
@@ -1050,22 +1095,30 @@ def run_interactive_menu() -> None:
                         if pkg_name in available:
                             # Check if already installed
                             if pkg_name in installed:
-                                popular_choices.append((pkg_name, f"✅ {pkg_name} - {pkg_desc} (installed)"))
+                                popular_choices.append(
+                                    (pkg_name, f"✅ {pkg_name} - {pkg_desc} (installed)")
+                                )
                             else:
                                 popular_choices.append((pkg_name, f"📦 {pkg_name} - {pkg_desc}"))
 
-                    console.print("\n[bold]Option 1:[/bold] Select from popular packages (✅ = already installed)")
-                    console.print("[bold]Option 2:[/bold] Search and type package names with autocomplete\n")
+                    console.print(
+                        "\n[bold]Option 1:[/bold] Select from popular packages (✅ = already installed)"
+                    )
+                    console.print(
+                        "[bold]Option 2:[/bold] Search and type package names with autocomplete\n"
+                    )
 
                     method = prompt_select(
                         "Choose input method:",
-                        [("multi", "Multi-select from popular packages"), ("auto", "Autocomplete search")]
+                        [
+                            ("multi", "Multi-select from popular packages"),
+                            ("auto", "Autocomplete search"),
+                        ],
                     )
 
                     if method == "multi" and popular_choices:
                         packages = prompt_checkbox(
-                            "Select packages to install (skip already installed):",
-                            popular_choices
+                            "Select packages to install (skip already installed):", popular_choices
                         )
 
                         # Filter out already installed packages
@@ -1074,7 +1127,9 @@ def run_interactive_menu() -> None:
                             already_installed = [pkg for pkg in packages if pkg in installed]
 
                             if already_installed:
-                                display_info(f"Skipping already installed: {', '.join(already_installed)}")
+                                display_info(
+                                    f"Skipping already installed: {', '.join(already_installed)}"
+                                )
 
                             packages = not_installed
 
@@ -1082,10 +1137,7 @@ def run_interactive_menu() -> None:
                                 display_warning("All selected packages are already installed.")
                     else:
                         # Autocomplete input
-                        packages = prompt_autocomplete_multi(
-                            "Enter package names",
-                            available
-                        )
+                        packages = prompt_autocomplete_multi("Enter package names", available)
 
                 if packages:
                     install(packages, no_confirm=False, as_deps=False)
@@ -1109,24 +1161,20 @@ def run_interactive_menu() -> None:
 
                     method = prompt_select(
                         "Choose input method:",
-                        [("multi", "Multi-select packages"), ("auto", "Autocomplete search")]
+                        [("multi", "Multi-select packages"), ("auto", "Autocomplete search")],
                     )
 
                     if method == "multi":
                         # Show installed packages for multi-select (limit to first 50)
                         choices = [(pkg, pkg) for pkg in installed[:50]]
                         if len(installed) > 50:
-                            console.print(f"\n[dim]Showing first 50 of {len(installed)} packages[/dim]")
+                            console.print(
+                                f"\n[dim]Showing first 50 of {len(installed)} packages[/dim]"
+                            )
 
-                        packages = prompt_checkbox(
-                            "Select packages to remove:",
-                            choices
-                        )
+                        packages = prompt_checkbox("Select packages to remove:", choices)
                     else:
-                        packages = prompt_autocomplete_multi(
-                            "Enter package names",
-                            installed
-                        )
+                        packages = prompt_autocomplete_multi("Enter package names", installed)
 
                 if packages:
                     remove(packages, no_confirm=False, recursive=False)

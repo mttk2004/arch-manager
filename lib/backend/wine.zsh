@@ -123,7 +123,7 @@ install_wine() {
                     failed+=("$pkg")
                 fi
             else
-                if sudo pacman -S --noconfirm "$pkg" &>/dev/null; then
+                if sudo pacman -S --noconfirm "$pkg" 2>/dev/null; then
                     installed+=("$pkg")
                 else
                     failed+=("$pkg")
@@ -138,7 +138,7 @@ install_wine() {
         if pacman -Qi "$pkg" &>/dev/null; then
             optional_installed+=("$pkg")
         else
-            if sudo pacman -S --noconfirm "$pkg" &>/dev/null; then
+            if sudo pacman -S --noconfirm "$pkg" 2>/dev/null; then
                 optional_installed+=("$pkg")
             fi
         fi
