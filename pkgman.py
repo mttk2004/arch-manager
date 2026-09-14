@@ -1082,6 +1082,91 @@ def run_alias_manager_menu() -> None:
         elif choice == "0":
             break
 
+
+def run_service_manager_menu() -> None:
+    """Run the interactive service manager menu"""
+    from bridge.service_manager import get_services
+    import subprocess
+    import re
+    
+    while True:
+        clear_screen()
+        console.print(create_header("⚙️ Service Manager", "Systemd Services"))
+        
+        with console.status("[cyan]Loading services...", spinner="dots"):
+            services = get_services()
+            
+        if not services:
+            display_error("Could not load services.")
+            pause()
+            break
+            
+        choices = []
+        for svc in services:
+            # Format: 🟢 [E] docker - Docker Engine
+            state_icon = "🟢" if svc["active"] == "active" else "🔴" if svc["active"] == "failed" else "⚪"
+            en_state = "E" if svc["enabled"] == "enabled" else "D"
+            # pad name to 30 chars
+            name = svc["name"]
+            padded_name = name.ljust(30)
+            label = f"{state_icon} [{en_state}] {padded_name} | {svc['desc']}"
+            choices.append((svc["name"], label))
+            
+        choices.append(("0", "⬅️ Back to Main Menu"))
+        
+        svc_name = prompt_select("Select a service (Use arrow keys or type to search):", choices, use_shortcuts=False)
+        
+        if not svc_name or svc_name == "0":
+            break
+
+        while True:
+            clear_screen()
+            console.print(create_header(f"⚙️ Manage: {svc_name}", "Service Actions"))
+            
+            action = prompt_select(
+                f"Action for {svc_name}:",
+                [
+                    ("1", "▶️ Start"),
+                    ("2", "⏹️ Stop"),
+                    ("3", "🔄 Restart"),
+                    ("4", "✅ Enable (start on boot)"),
+                    ("5", "❌ Disable (don't start on boot)"),
+                    ("6", "ℹ️ Show Status"),
+                    ("0", "⬅️ Back"),
+                ],
+                use_shortcuts=True
+            )
+            
+            if action == "0":
+                break
+                
+            action_map = {
+                "1": "start",
+                "2": "stop",
+                "3": "restart",
+                "4": "enable",
+                "5": "disable",
+                "6": "status"
+            }
+            cmd_action = action_map.get(action)
+                
+            if cmd_action == "status":
+                subprocess.run(["systemctl", "status", svc_name])
+                pause()
+            elif cmd_action:
+                with console.status(f"[cyan]Executing systemctl {cmd_action} {svc_name}..."):
+                    res = subprocess.run(["sudo", "systemctl", cmd_action, svc_name], capture_output=True, text=True)
+                if res.returncode == 0:
+                    display_success(f"Successfully executed: systemctl {cmd_action} {svc_name}")
+                else:
+                    display_error(f"Failed to {cmd_action} {svc_name}")
+                    if res.stderr:
+                        console.print(f"[dim]{res.stderr}[/dim]")
+                pause()
+                # Break to reload services and show updated state
+                break
+
+
 def run_interactive_menu() -> None:
     """Run the interactive main menu"""
     # Pre-authenticate sudo once at startup
@@ -1312,6 +1397,9 @@ def run_interactive_menu() -> None:
             elif choice == "a":
                 run_alias_manager_menu()
 
+
+            elif choice == "v":
+                run_service_manager_menu()
             elif choice == "0":
                 display_success("Goodbye! 👋")
                 break

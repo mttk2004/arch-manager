@@ -165,6 +165,7 @@ MENU_ITEMS = {
         ("d", f"{Icons.DOWNGRADE} Downgrade package", "Revert a package to a previous version"),
         ("m", f"{Icons.MIRROR} Mirror manager", "Optimize pacman mirror list"),
         ("s", f"{Icons.HEALTH} System health", "Check dependencies, disk usage, and optimize"),
+        ("v", f"{Icons.WRENCH} Service manager", "Manage systemd services"),
     ],
     MenuCategory.OTHER: [
         ("9", f"{Icons.FONT} Font manager", "Install and manage system fonts"),
