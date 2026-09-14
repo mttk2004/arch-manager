@@ -116,7 +116,7 @@ def prompt_choice(
 
 def prompt_select(
     message: str,
-    choices: List[tuple[str, str]],
+    choices: List[tuple[Optional[str], str]],
     default: Optional[str] = None,
     use_shortcuts: bool = False,
 ) -> str:
@@ -127,30 +127,16 @@ def prompt_select(
     navigates with ↑/↓ and confirms with Enter.  When
     ``use_shortcuts=True`` the *value* string is also registered as a
     single-key shortcut so the user can jump to an item directly.
-
-    Args:
-        message: Question text shown above the list
-        choices: List of ``(value, label)`` tuples to display
-        default: Pre-selected value (must match one of the values)
-        use_shortcuts: Enable single-key shortcuts derived from values
-
-    Returns:
-        The *value* of the selected entry, or ``default`` (falling back
-        to an empty string) if the prompt was cancelled (e.g. Ctrl-C)
-
-    Example:
-        >>> choice = prompt_select(
-        ...     "Select action:",
-        ...     [("1", "Install packages"), ("2", "Remove packages"), ("0", "Exit")],
-        ...     use_shortcuts=True,
-        ... )
+    If `value` is None, the `label` is rendered as a Separator.
     """
     questionary_choices = []
     for value, label in choices:
-        if use_shortcuts:
+        if value is None:
+            questionary_choices.append(questionary.Separator(label))
+        elif use_shortcuts:
             questionary_choices.append(
                 questionary.Choice(
-                    title=f"[{value}] {label}",
+                    title=label,
                     value=value,
                     shortcut_key=value,
                 )

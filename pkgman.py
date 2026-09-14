@@ -453,17 +453,27 @@ def list(
                 # Display packages in columns
                 console.print(f"\n[cyan]Total: {count} packages[/cyan]\n")
 
-                # Display first 20, then ask to continue
-                display_limit = 20
-                for i, pkg in enumerate(packages[:display_limit], start=1):
-                    console.print(f"{i:4d}. {pkg}")
+                from rich.columns import Columns
+                from rich.text import Text
+
+                def display_packages_in_columns(pkgs_list: list[str], start_idx: int) -> None:
+                    # Create styled texts for each package
+                    renderables = [
+                        Text(f"{idx:4d}. {pkg}") 
+                        for idx, pkg in enumerate(pkgs_list, start=start_idx)
+                    ]
+                    # Print them in multiple columns (Rich automatically calculates optimal column count)
+                    console.print(Columns(renderables, equal=True, expand=True))
+
+                # Display first 60, then ask to continue
+                display_limit = 60
+                display_packages_in_columns(packages[:display_limit], 1)
 
                 if count > display_limit:
                     console.print(f"\n[dim]... and {count - display_limit} more[/dim]")
 
                     if prompt_confirm("Show all packages?", default=False):
-                        for i, pkg in enumerate(packages[display_limit:], start=display_limit + 1):
-                            console.print(f"{i:4d}. {pkg}")
+                        display_packages_in_columns(packages[display_limit:], display_limit + 1)
 
     except BackendError as e:
         display_error(e.message, e.code)
@@ -1040,13 +1050,10 @@ def run_interactive_menu() -> None:
         # Display ASCII art header
         console.print(create_app_header())
 
-        # Display grouped menu
-        console.print(create_grouped_menu())
-        console.print()
-
-        # Flatten menu items for prompt_select
+        # Build menu items with category separators for interactive select
         menu_items = []
-        for _category, items in MENU_ITEMS.items():
+        for category, items in MENU_ITEMS.items():
+            menu_items.append((None, f"--- {category} ---"))
             for key, label, _desc in items:
                 menu_items.append((key, label))
 
