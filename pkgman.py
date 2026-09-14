@@ -1014,6 +1014,74 @@ def menu() -> None:
     run_interactive_menu()
 
 
+def run_alias_manager_menu() -> None:
+    """Run the interactive alias manager menu"""
+    from bridge.alias_manager import get_aliases, add_alias, remove_alias
+    
+    while True:
+        clear_screen()
+        console.print(create_header("🔧 Alias Manager", "Manage Zsh Aliases"))
+        
+        aliases = get_aliases()
+        if aliases:
+            from rich.table import Table
+            table = Table(show_header=True, header_style="bold magenta", border_style="bright_blue")
+            table.add_column("Alias", style="cyan")
+            table.add_column("Command", style="green")
+            for name, cmd in aliases.items():
+                table.add_row(name, cmd)
+            console.print(table)
+        else:
+            display_info("No aliases found in ~/.zshrc")
+            
+        console.print()
+        
+        choice = prompt_select(
+            "Select an action:",
+            [
+                ("1", "➕ Add/Update Alias"),
+                ("2", "🗑️ Remove Alias"),
+                ("0", "⬅️ Back to Main Menu"),
+            ],
+            use_shortcuts=True,
+        )
+        
+        if choice == "1":
+            name = prompt_text("Enter alias name (e.g., glo)")
+            if not name:
+                continue
+                
+            command = prompt_text(f"Enter command for '{name}'")
+            if not command:
+                continue
+                
+            if add_alias(name, command):
+                display_success(f"Alias '{name}' added successfully!")
+                
+            pause()
+            
+        elif choice == "2":
+            if not aliases:
+                display_warning("No aliases to remove.")
+                pause()
+                continue
+                
+            name = prompt_select(
+                "Select alias to remove:",
+                [(k, f"{k} -> {v}") for k, v in aliases.items()] + [(None, "---"), ("0", "Cancel")],
+                use_shortcuts=False,
+            )
+            
+            if name and name != "0":
+                if remove_alias(name):
+                    display_success(f"Alias '{name}' removed successfully!")
+                else:
+                    display_error(f"Failed to remove alias '{name}'.")
+            pause()
+            
+        elif choice == "0":
+            break
+
 def run_interactive_menu() -> None:
     """Run the interactive main menu"""
     # Pre-authenticate sudo once at startup
@@ -1239,6 +1307,10 @@ def run_interactive_menu() -> None:
             elif choice == "w":
                 run_wine_manager_menu()
                 pause()
+
+
+            elif choice == "a":
+                run_alias_manager_menu()
 
             elif choice == "0":
                 display_success("Goodbye! 👋")

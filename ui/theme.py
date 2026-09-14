@@ -169,6 +169,7 @@ MENU_ITEMS = {
     MenuCategory.OTHER: [
         ("9", f"{Icons.FONT} Font manager", "Install and manage system fonts"),
         ("w", f"{Icons.WINE} Wine manager", "Install and configure Wine for Windows apps"),
+        ("a", f"{Icons.WRENCH} Alias manager", "Manage Zsh aliases"),
         ("0", f"{Icons.EXIT} Exit", "Exit Arch Manager"),
     ],
 }
