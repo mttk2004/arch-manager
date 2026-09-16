@@ -1193,9 +1193,9 @@ def run_interactive_menu() -> None:
     if not authenticate_sudo(use_polkit=use_polkit):
         display_error("Cannot proceed without sudo access. Exiting...")
         return
-
-    console.print()
-    input("Press Enter to continue to main menu...")
+        
+    import time
+    time.sleep(0.8)  # Briefly show the success message before clearing screen
 
     while True:
         clear_screen()
