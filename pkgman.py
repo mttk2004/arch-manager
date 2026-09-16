@@ -494,36 +494,43 @@ def update(
     """
     console.print(create_header("⬆️  System Update", "Updating system packages..."))
 
+    import subprocess
+    import shutil
+
+    cmd = []
+    if aur:
+        if shutil.which("yay"):
+            cmd = ["yay"]
+        elif shutil.which("paru"):
+            cmd = ["paru"]
+        else:
+            display_warning("AUR helper (yay/paru) not found. Falling back to pacman.")
+            cmd = ["sudo", "pacman"]
+    else:
+        cmd = ["sudo", "pacman"]
+
+    cmd.append("-Syu")
+    if no_confirm:
+        cmd.append("--noconfirm")
+
+    display_info(f"Executing: {' '.join(cmd)}")
+    console.print()
+    
     try:
-        # Check for updates first
-        display_info("Checking for updates...")
-        check_response = backend.call("package", "check_updates")
-
-        if check_response.is_success() and check_response.data:
-            updates_count = check_response.data.get("count", 0)
-
-            if updates_count == 0:
-                display_success("System is already up to date! 🎉")
-                return
-
-            display_info(f"Found {updates_count} available update(s)")
-
-            # Confirm update
-            if not no_confirm:
-                if not prompt_confirm("Proceed with system update?", default=True):
-                    display_info("Update cancelled")
-                    return
-
-            # Perform update
-            with console.status("[cyan]Updating system...", spinner="dots"):
-                response = backend.update_system(no_confirm=True, aur=aur)
-
-            # Display results
-            display_operation_result(response.to_dict())
-
-    except BackendError as e:
-        display_error(e.message, e.code)
-        raise typer.Exit(code=1)
+        # Run directly in the foreground, so the user can see output and answer prompts
+        result = subprocess.run(cmd)
+        
+        console.print()
+        if result.returncode == 0:
+            display_success("System updated successfully! 🎉")
+        else:
+            display_error(f"System update failed with exit code {result.returncode}")
+            
+    except KeyboardInterrupt:
+        console.print()
+        display_warning("System update cancelled by user")
+    except Exception as e:
+        display_error(f"Failed to run update command: {e}")
 
 
 @app.command()
@@ -1412,6 +1419,9 @@ def run_interactive_menu() -> None:
             console.print("\n")
             if prompt_confirm("Exit program?", default=False):
                 break
+        except typer.Exit:
+            # Commands raise typer.Exit when they fail, they already print the error.
+            pause()
         except Exception as e:
             display_error(f"An error occurred: {e}")
             pause()
