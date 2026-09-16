@@ -88,102 +88,66 @@ arch-zsh-manager/
 - **downgrade** - Cho tính năng hạ cấp gói
 - **pacman-contrib** - Cho lệnh paccache
 
-## 🚀 Cài đặt
+## 🚀 Cài đặt và Sử dụng
 
-### Phương pháp 1: Tự động (Khuyến nghị)
+Dự án hiện tại được viết bằng Python kết hợp với backend Zsh, mang lại giao diện TUI hiện đại và mượt mà hơn.
+
+### Phương pháp 1: File thực thi độc lập (Khuyên dùng)
+Cách này giúp bạn chạy tool mà không cần bận tâm đến phiên bản Python trên máy, cực kỳ tiện lợi kể cả khi bạn cài lại Arch Linux.
 
 ```bash
-# Clone repository
+# 1. Clone repository
 git clone https://github.com/mttk2004/arch-zsh-manager.git
 cd arch-zsh-manager
 
-# Chạy script cài đặt (sẽ tự động cài dependencies và setup)
-chmod +x scripts/install.sh
-./scripts/install.sh
+# 2. Build file nhị phân (chỉ cần làm 1 lần)
+chmod +x build.sh
+./build.sh
+
+# 3. Sử dụng
+./dist/pkgman
+
+# (Tùy chọn) Copy vào hệ thống để dùng lệnh 'pkgman' ở bất cứ đâu:
+sudo cp dist/pkgman /usr/local/bin/
 ```
 
-Script cài đặt sẽ:
-- ✅ Kiểm tra hệ thống Arch
-- ✅ Cài đặt zsh nếu chưa có
-- ✅ Cài đặt các gói cần thiết (pacman-contrib, git, base-devel, reflector)
-- ✅ Hỏi cài đặt YAY (AUR helper) nếu muốn
-- ✅ Cài đặt bin/pkgman vào hệ thống
-
-### Phương pháp 2: Thủ công
+### Phương pháp 2: Chạy trực tiếp qua Python Virtual Environment
+Nếu bạn muốn đóng góp code hoặc chạy trực tiếp từ mã nguồn:
 
 ```bash
-# Clone repository
+# 1. Clone repository
 git clone https://github.com/mttk2004/arch-zsh-manager.git
 cd arch-zsh-manager
 
-# Cấp quyền thực thi
-chmod +x bin/pkgman
+# 2. Tạo và kích hoạt môi trường ảo
+python -m venv venv
+source venv/bin/activate
 
-# Chạy trực tiếp
-./bin/pkgman
+# 3. Cài đặt dependencies
+pip install -e .
 
-# HOẶC cài vào hệ thống
-sudo cp -r bin /usr/local/
-sudo cp -r lib /usr/local/share/pkgman/
-
-# HOẶC thêm alias vào ~/.zshrc
-echo "alias pkgman='$PWD/bin/pkgman'" >> ~/.zshrc
-source ~/.zshrc
-```
-
-### Cài đặt dependencies (thủ công)
-
-```bash
-sudo pacman -S pacman-contrib reflector base-devel git
+# 4. Chạy tool
+python pkgman.py
 ```
 
 ## 📖 Hướng dẫn sử dụng
 
-### Chạy script
+### Khởi chạy
 
 ```bash
-# Nếu đã cài vào hệ thống hoặc tạo alias
+# Nếu bạn đã copy file build vào /usr/local/bin
 pkgman
 
-# Hoặc chạy trực tiếp
-./bin/pkgman
+# Hoặc nếu chạy từ mã nguồn (nhớ kích hoạt venv trước)
+python pkgman.py
 ```
 
-> **Lưu ý**: Không cần chạy với `sudo`. Script sẽ tự yêu cầu quyền root khi cần thiết.
+Khi chạy tool, bạn sẽ thấy một giao diện Terminal UI (TUI) tương tác trực quan. Sử dụng **phím mũi tên** để di chuyển, phím **Enter** để chọn, hoặc gõ phím tắt tương ứng.
 
-### Menu chính
-
-```
-╔═══════════════════════════════════════════════════════════════╗
-║          ARCH PACKAGE MANAGER - Quản lý gói tập trung         ║
-╚═══════════════════════════════════════════════════════════════╝
-
-═══ HỆ THỐNG GÓI ═══
-1.  Cài đặt gói
-2.  Xóa gói
-3.  Cập nhật hệ thống
-4.  Tìm kiếm gói
-5.  Xem thông tin gói
-
-═══ BẢO TRÌ HỆ THỐNG ═══
-6.  Dọn dẹp cache
-7.  Xóa gói orphan (không cần thiết)
-8.  Xem danh sách gói đã cài
-9.  Kiểm tra gói bị hỏng
-
-═══ NÂNG CAO ═══
-10. Downgrade gói
-11. Xem log gói
-12. Mirror management
-
-═══ FONT CHỮ ═══
-13. Quản lý font chữ
-
-═══ PHÁT TRIỂN ═══
-14. Môi trường phát triển
-
-0.  Thoát
-```
+Các tính năng nổi bật mới cập nhật:
+- **Service Manager**: Quản lý các systemd service với tính năng tìm kiếm fuzzy search.
+- **Alias Manager**: Thêm/sửa/xoá các zsh aliases an toàn và nhanh chóng.
+- **Giao diện đa cột**: Liệt kê các package với bố cục thông minh tận dụng tối đa chiều rộng màn hình.
 
 ### Ví dụ sử dụng
 
