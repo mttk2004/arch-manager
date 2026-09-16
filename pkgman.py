@@ -546,6 +546,22 @@ def clean(
     """
     console.print(create_header("🧹 Cache Cleanup", "Cleaning package cache..."))
 
+    import shutil
+    import subprocess
+    if not shutil.which("paccache"):
+        display_warning("The 'paccache' command is missing. It is part of the 'pacman-contrib' package.")
+        if prompt_confirm("Would you like to install 'pacman-contrib' now?", default=True):
+            with console.status("[cyan]Installing pacman-contrib..."):
+                res = subprocess.run(["sudo", "pacman", "-S", "--noconfirm", "pacman-contrib"], capture_output=True, text=True)
+            if res.returncode == 0:
+                display_success("Installed pacman-contrib successfully!")
+            else:
+                display_error("Failed to install pacman-contrib.")
+                console.print(f"[dim]{res.stderr}[/dim]")
+                return
+        else:
+            return
+
     try:
         if prompt_confirm(f"Clean cache (keeping {keep} versions)?", default=True):
             response = backend.clean_cache(keep_versions=keep)
