@@ -89,7 +89,7 @@ json_object() {
 # Usage: json_success "message" data_json
 json_success() {
     local message="$1"
-    local data="${2:-{}}"
+    local data="${2:-"{}"}"
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     echo -n '{"status":"success","data":'
@@ -106,7 +106,7 @@ json_success() {
 json_error() {
     local code="$1"
     local message="$2"
-    local details="${3:-{}}"
+    local details="${3:-"{}"}"
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     echo -n '{"status":"error","error":{"code":"'
@@ -125,7 +125,7 @@ json_error() {
 # Create warning response
 json_warning() {
     local message="$1"
-    local data="${2:-{}}"
+    local data="${2:-"{}"}"
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     echo -n '{"status":"warning","data":'
@@ -140,7 +140,7 @@ json_warning() {
 # Create info response
 json_info() {
     local message="$1"
-    local data="${2:-{}}"
+    local data="${2:-"{}"}"
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     echo -n '{"status":"info","data":'

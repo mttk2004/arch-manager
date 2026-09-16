@@ -594,6 +594,18 @@ def run_font_manager_menu() -> None:
         if choice == "list":
             display_info("Listing installed fonts...")
             response = backend.list_fonts()
+            
+            if response.is_success() and response.data:
+                fonts = response.data.get("fonts", [])
+                if fonts:
+                    from rich.columns import Columns
+                    from rich.text import Text
+                    
+                    font_texts = [Text(f"• {font}", style="cyan") for font in fonts]
+                    console.print()
+                    console.print(Columns(font_texts, equal=True, expand=True))
+                    console.print()
+            
             display_operation_result(response.to_dict())
 
         elif choice == "search":
