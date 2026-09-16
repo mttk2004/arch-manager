@@ -65,7 +65,11 @@ class BackendCaller:
         """
         if backend_dir is None:
             # Auto-detect backend directory
-            project_root = Path(__file__).parent.parent
+            import sys
+            if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                project_root = Path(sys._MEIPASS)
+            else:
+                project_root = Path(__file__).parent.parent
             backend_dir = project_root / "lib" / "backend"
 
         self.backend_dir = backend_dir
