@@ -18,7 +18,7 @@ json_escape() {
     str="${str//$'\n'/\\n}"  # Newline
     str="${str//$'\r'/\\r}"  # Carriage return
     str="${str//$'\t'/\\t}"  # Tab
-    echo -n "$str"
+    printf "%s" "$str"
 }
 
 # Convert array to JSON array string
@@ -37,7 +37,7 @@ json_array() {
     done
 
     result+="]"
-    echo -n "$result"
+    printf "%s" "$result"
 }
 
 # Convert associative array to JSON object
@@ -78,7 +78,7 @@ json_object() {
     done
 
     result+="}"
-    echo -n "$result"
+    printf "%s" "$result"
 }
 
 # =============================================================================
@@ -93,11 +93,11 @@ json_success() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     echo -n '{"status":"success","data":'
-    echo -n "$data"
+    printf "%s" "$data"
     echo -n ',"message":"'
-    echo -n "$(json_escape "$message")"
+    printf "%s" "$(json_escape "$message")"
     echo -n '","timestamp":"'
-    echo -n "$timestamp"
+    printf "%s" "$timestamp"
     echo -n '"}'
 }
 
@@ -110,15 +110,15 @@ json_error() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     echo -n '{"status":"error","error":{"code":"'
-    echo -n "$code"
+    printf "%s" "$code"
     echo -n '","message":"'
-    echo -n "$(json_escape "$message")"
+    printf "%s" "$(json_escape "$message")"
     echo -n '","details":'
-    echo -n "$details"
+    printf "%s" "$details"
     echo -n '},"message":"'
-    echo -n "$(json_escape "$message")"
+    printf "%s" "$(json_escape "$message")"
     echo -n '","timestamp":"'
-    echo -n "$timestamp"
+    printf "%s" "$timestamp"
     echo -n '"}'
 }
 
@@ -129,11 +129,11 @@ json_warning() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     echo -n '{"status":"warning","data":'
-    echo -n "$data"
+    printf "%s" "$data"
     echo -n ',"message":"'
-    echo -n "$(json_escape "$message")"
+    printf "%s" "$(json_escape "$message")"
     echo -n '","timestamp":"'
-    echo -n "$timestamp"
+    printf "%s" "$timestamp"
     echo -n '"}'
 }
 
@@ -144,11 +144,11 @@ json_info() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     echo -n '{"status":"info","data":'
-    echo -n "$data"
+    printf "%s" "$data"
     echo -n ',"message":"'
-    echo -n "$(json_escape "$message")"
+    printf "%s" "$(json_escape "$message")"
     echo -n '","timestamp":"'
-    echo -n "$timestamp"
+    printf "%s" "$timestamp"
     echo -n '"}'
 }
 
