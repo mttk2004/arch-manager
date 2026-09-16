@@ -87,3 +87,4 @@ config.local
 # Custom user scripts
 custom/
 local/
+*.spec
